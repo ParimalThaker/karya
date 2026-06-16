@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1B2B4B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Karya">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/karya-icon-192.png">
+<title>Karya – Geetanjali</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#F0F3FA;--card:#fff;--nav:#1B2B4B;--nav2:#253A63;--acc:#4F7EFF;--txt:#1A1F2E;--mut:#6B7280;--bdr:#E5E9F0;--r:14px;--sh:0 2px 16px rgba(27,43,75,.09)}
+html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--txt);-webkit-text-size-adjust:100%}
+#app{min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+a{color:var(--acc)}
+
+/* LOGIN */
+.login-screen{min-height:100vh;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:24px;background:linear-gradient(150deg,#1B2B4B 0%,#2A4080 100%)}
+.login-card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);border-radius:24px;padding:40px 32px;width:100%;max-width:360px;text-align:center}
+.login-appname{font-size:30px;font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:4px}
+.login-sub{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:26px}
+.pw-wrap{position:relative;margin-bottom:12px}
+.pw-wrap input{width:100%;border:1.5px solid rgba(255,255,255,.2);border-radius:12px;padding:13px 44px 13px 16px;font-size:17px;letter-spacing:3px;background:rgba(255,255,255,.1);color:#fff;text-align:center}
+.pw-wrap input::placeholder{letter-spacing:0;color:rgba(255,255,255,.35);font-size:14px}
+.pw-wrap input:focus{outline:none;border-color:rgba(255,255,255,.5)}
+.pw-toggle{position:absolute;right:12px;top:50%;-webkit-transform:translateY(-50%);transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.5);font-size:16px}
+.login-btn{width:100%;padding:13px;background:var(--acc);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700}
+.pw-err{color:#FF6B6B;font-size:13px;margin-top:8px;display:none}
+
+/* SELECT */
+.select-screen{min-height:100vh;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:20px;background:linear-gradient(150deg,#1B2B4B 0%,#2A4080 100%)}
+.select-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);border-radius:24px;padding:32px 24px;width:100%;max-width:500px;text-align:center}
+.app-title{font-size:24px;font-weight:800;color:#fff;margin-bottom:4px}
+.select-sub{color:rgba(255,255,255,.45);font-size:13px;margin-bottom:22px}
+.member-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:9px;margin-bottom:18px}
+.member-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px 8px;cursor:pointer;-webkit-transition:all .2s;transition:all .2s;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;border-style:solid}
+.member-card:hover,.member-card:active{background:rgba(255,255,255,.18);-webkit-transform:translateY(-2px);transform:translateY(-2px)}
+.av{width:42px;height:42px;border-radius:50%;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-weight:800;font-size:16px;color:#fff;-ms-flex-negative:0;flex-shrink:0}
+.m-name{font-weight:600;font-size:12px;color:#fff;line-height:1.2;text-align:center}
+.m-role{font-size:10px;color:rgba(255,255,255,.45);text-align:center}
+.theme-row{margin-top:4px;font-size:11px;color:rgba(255,255,255,.35)}
+.theme-row a{color:rgba(255,255,255,.55);margin:0 5px;text-decoration:none}
+
+/* APP SHELL */
+.app-shell{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;min-height:100vh;background:var(--bg)}
+
+/* TOPBAR */
+.topbar{background:var(--nav);color:#fff;padding:11px 14px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between;position:-webkit-sticky;position:sticky;top:0;z-index:100}
+.t-left{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:8px}
+.t-right{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:5px}
+.t-appname{font-weight:800;font-size:17px;letter-spacing:-.5px}
+.icon-btn{background:rgba(255,255,255,.12);border:none;border-radius:8px;width:34px;height:34px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:15px;color:#fff}
+.user-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:4px 11px 4px 4px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#fff;border-style:solid}
+.av-sm{width:24px;height:24px;border-radius:50%;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-weight:700;font-size:10px;color:#fff;-ms-flex-negative:0;flex-shrink:0}
+
+/* STATS STRIP */
+.stats-strip{background:var(--nav2);display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:stretch;-ms-flex-align:stretch;align-items:stretch;-ms-flex-negative:0;flex-shrink:0;position:-webkit-sticky;position:sticky;top:57px;z-index:99;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.stats-strip::-webkit-scrollbar{display:none}
+.stat-btn{-webkit-box-flex:1;-ms-flex:1;flex:1;min-width:70px;background:none;border:none;border-bottom:3px solid transparent;padding:9px 4px 7px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:1px;-webkit-transition:border-color .15s;transition:border-color .15s;-webkit-tap-highlight-color:transparent}
+.stat-btn.active{border-bottom-color:var(--acc)}
+.s-num{font-size:19px;font-weight:800;color:#fff;line-height:1}
+.s-lbl{font-size:8.5px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em;text-align:center}
+.s-div{width:1px;background:rgba(255,255,255,.1);-ms-flex-negative:0;flex-shrink:0;-webkit-align-self:center;-ms-flex-item-align:center;align-self:center;height:26px}
+
+/* FILTER BAR */
+.filter-bar{background:var(--card);border-bottom:1px solid var(--bdr);padding:7px 14px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:8px;position:-webkit-sticky;position:sticky;top:108px;z-index:98}
+.f-label{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.prio-sel{border:1.5px solid var(--bdr);border-radius:8px;padding:5px 9px;font-size:12px;background:var(--bg);color:var(--txt)}
+
+/* TASK LIST */
+.task-list{-webkit-box-flex:1;-ms-flex:1;flex:1;padding:10px 12px 270px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:8px}
+
+/* TASK CARD */
+.task-card{background:var(--card);border-radius:var(--r);padding:12px 10px 12px 12px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start;gap:9px;box-shadow:var(--sh);border-left:3px solid transparent;-webkit-transition:opacity .2s;transition:opacity .2s}
+.task-card.overdue{border-left-color:#FF6B6B}
+.task-card.done-card{opacity:.55}
+.chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--bdr);background:none;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;-webkit-transition:all .2s;transition:all .2s;-ms-flex-negative:0;flex-shrink:0;margin-top:1px;-webkit-tap-highlight-color:transparent}
+.chk.done{background:#00C896;border-color:#00C896}
+.task-body{-webkit-box-flex:1;-ms-flex:1;flex:1;cursor:pointer;min-width:0}
+.task-title{font-size:28px;font-weight:800;color:var(--txt);line-height:1.15;margin-bottom:4px}
+.task-title.strike{text-decoration:line-through;color:var(--mut)}
+.future-tag{display:inline-block;font-size:10px;background:#FFF3DC;color:#9A6700;padding:1px 7px;border-radius:99px;margin-bottom:4px}
+.snooze-badge{cursor:pointer;text-decoration:underline dotted;background:#EEF2FF!important;color:#4F7EFF!important}
+
+/* ASSIGNEES */
+.assignees-row{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-ms-flex-wrap:wrap;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.assignee-pill{display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:3px;padding:3px 9px 3px 5px;border-radius:99px;font-size:12px;font-weight:600;color:#fff}
+.ap-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.6)}
+
+/* TASK META */
+.task-meta{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:6px;-ms-flex-wrap:wrap;flex-wrap:wrap}
+.prio-dot{width:7px;height:7px;border-radius:50%;-ms-flex-negative:0;flex-shrink:0}
+.due-lbl{font-size:11px;color:var(--mut)}
+.due-lbl.overdue{color:#FF6B6B;font-weight:700}
+.due-lbl.soon{color:#E8720C;font-weight:600}
+.menu-btn{background:none;border:none;color:var(--mut);font-size:20px;padding:0 3px;-ms-flex-negative:0;flex-shrink:0;line-height:1;-webkit-align-self:flex-start;-ms-flex-item-align:start;align-self:flex-start}
+.empty-state{text-align:center;padding:60px 20px;color:var(--mut)}
+.empty-icon{font-size:42px;margin-bottom:12px}
+
+/* ACHIEVEMENT STRIP */
+.achieve-wrap{background:var(--nav2);position:fixed;bottom:48px;left:0;right:0;z-index:80;overflow:hidden}
+.team-prog-row{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:8px;padding:5px 12px 3px}
+.team-prog-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);white-space:nowrap}
+.team-prog-bar-bg{-webkit-box-flex:1;-ms-flex:1;flex:1;height:6px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden}
+.team-prog-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#00C896,#4F7EFF);-webkit-transition:width .6s ease;transition:width .6s ease}
+.team-prog-val{font-size:10px;color:rgba(255,255,255,.55);white-space:nowrap}
+.team-milestone{font-size:10px;color:#FFD700;white-space:nowrap;font-weight:700}
+.achieve-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:3px 12px 6px}
+.achieve-scroll::-webkit-scrollbar{display:none}
+.achieve-inner{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:10px;min-width:-webkit-max-content;min-width:-moz-max-content;min-width:max-content}
+.achieve-hd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);white-space:nowrap}
+.achieve-entry{display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:4px;font-size:11px;color:#fff;white-space:nowrap}
+.ach-dot{width:7px;height:7px;border-radius:50%;display:inline-block;-ms-flex-negative:0;flex-shrink:0}
+.ach-pct{font-weight:800;font-size:12px}
+.ach-cnt{font-size:10px;color:rgba(255,255,255,.5)}
+.ach-sep{color:rgba(255,255,255,.2);font-size:10px}
+
+/* TEAM STRIP */
+.team-strip{background:var(--card);border-top:1px solid var(--bdr);padding:6px 14px;position:fixed;bottom:0;left:0;right:0;z-index:80;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:8px}
+.t-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);font-weight:700;white-space:nowrap}
+.t-avs{display:-webkit-box;display:-ms-flexbox;display:flex;gap:8px;overflow-x:auto;-webkit-box-flex:1;-ms-flex:1;flex:1;-webkit-overflow-scrolling:touch}
+.t-avs::-webkit-scrollbar{display:none}
+.tav-wrap{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:2px;-ms-flex-negative:0;flex-shrink:0}
+.tav-nm{font-size:9px;color:var(--mut)}
+
+/* FAB */
+.fab{position:fixed;bottom:100px;right:18px;width:52px;height:52px;border-radius:50%;background:var(--acc);color:#fff;border:none;font-size:26px;box-shadow:0 4px 20px rgba(79,126,255,.45);z-index:200;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;-webkit-transition:-webkit-transform .15s;transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.fab:active{-webkit-transform:scale(.92);transform:scale(.92)}
+
+/* MODAL */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.52);z-index:300;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding-bottom:24px}
+@media(min-width:580px){.modal-overlay{-webkit-box-align:center;-ms-flex-align:center;align-items:center;padding:20px}.modal{border-radius:20px}}
+.modal-hdr{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between;padding:16px 18px 0;position:-webkit-sticky;position:sticky;top:0;background:var(--card);z-index:1}
+.modal-hdr h2{font-size:17px;font-weight:800}
+.modal-x{background:var(--bg);border:none;border-radius:50%;width:30px;height:30px;font-size:13px;color:var(--mut);display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center}
+.modal-body{padding:14px 18px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:10px}
+.modal-foot{padding:4px 18px 0;display:-webkit-box;display:-ms-flexbox;display:flex;gap:8px;-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end}
+.flbl{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.07em}
+.field-input{width:100%;border:1.5px solid var(--bdr);border-radius:10px;padding:10px 12px;font-size:14px;background:var(--bg);color:var(--txt)}
+.field-input:focus{outline:none;border-color:var(--acc)}
+.field-ta{min-height:80px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-half{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:5px}
+
+/* MULTI-ASSIGN */
+.assign-grid{display:-webkit-box;display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;gap:6px;padding:10px 12px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:10px}
+.assign-chip{display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:5px;padding:5px 10px;border-radius:99px;border:2px solid transparent;background:rgba(255,255,255,.9);font-size:12px;font-weight:600;cursor:pointer;-webkit-transition:all .15s;transition:all .15s;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;border-style:solid}
+.chip-dot{width:8px;height:8px;border-radius:50%}
+
+/* BUTTONS */
+.btn-primary{background:var(--nav);color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:700}
+.btn-secondary{background:var(--bg);border:1.5px solid var(--bdr);border-radius:10px;padding:11px 20px;font-size:14px;font-weight:600;color:var(--txt);border-style:solid}
+.btn-danger{background:#FFF0F0;color:#D93025;border:1.5px solid #FFCDD2;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:600;border-style:solid}
+.action-list{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:6px}
+.action-item{background:var(--bg);border:1.5px solid var(--bdr);border-radius:10px;padding:13px 15px;font-size:14px;font-weight:500;cursor:pointer;text-align:left;color:var(--txt);width:100%;border-style:solid}
+.action-item.danger{color:#D93025;background:#FFF5F5;border-color:#FFCDD2}
+
+/* DETAIL */
+.detail-desc{font-size:14px;line-height:1.7;color:var(--txt);word-break:break-word}
+.detail-grid{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:7px}
+.ditem{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between;-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start;padding:9px 12px;background:var(--bg);border-radius:9px;gap:8px}
+.dkey{font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.dval{font-size:13px;font-weight:500;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-ms-flex-wrap:wrap;flex-wrap:wrap;gap:4px;-webkit-box-pack:end;-ms-flex-pack:end;justify-content:flex-end}
+
+/* NOTIFICATIONS MODAL */
+.notif-sec{margin-bottom:14px}
+.ns-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.notif-item{padding:10px 12px;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;margin-bottom:5px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between}
+.overdue-item{background:#FFF5F5;color:#C0392B}
+.soon-item{background:#FFF8EC;color:#9A6700}
+
+/* LOG */
+.log-item{display:-webkit-box;display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;gap:4px 8px;padding:9px 0;border-bottom:1px solid var(--bdr);font-size:12px;-webkit-box-align:baseline;-ms-flex-align:baseline;align-items:baseline}
+.log-user{font-weight:700;color:var(--acc)}
+.log-ts{color:var(--mut);font-size:11px;margin-left:auto}
+
+/* IMG DROP */
+.img-drop{border:2px dashed var(--bdr);border-radius:10px;padding:14px;text-align:center;font-size:13px;color:var(--mut);cursor:pointer;-webkit-transition:background .15s;transition:background .15s}
+.img-drop:hover{background:var(--bg)}
+
+/* BIG NOTIFICATION — persistent, 40% screen */
+.big-notif-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.78);z-index:9998;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:16px;-webkit-animation:fadeIn .25s ease;animation:fadeIn .25s ease}
+.big-notif-box{background:#fff;border-radius:22px;padding:28px 22px 22px;width:100%;max-width:440px;min-height:44vh;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.45);-webkit-animation:popIn .3s ease;animation:popIn .3s ease;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;gap:10px}
+.big-notif-icon{font-size:48px}
+.big-notif-donow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:#E8720C;background:#FFF3E0;padding:4px 14px;border-radius:99px}
+.big-notif-task{font-size:48px;font-weight:900;color:#1A1F2E;line-height:1.1;word-break:break-word;width:100%}
+.snooze-label{font-size:11px;color:#6B7280;font-weight:500}
+.snooze-row{display:-webkit-box;display:-ms-flexbox;display:flex;gap:7px;width:100%;-ms-flex-wrap:wrap;flex-wrap:wrap;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center}
+.snooze-btn{-webkit-box-flex:1;-ms-flex:1;flex:1;min-width:90px;background:#F0F3FA;border:1.5px solid #E5E9F0;border-radius:10px;padding:9px 6px;font-size:12px;font-weight:600;color:#1B2B4B;cursor:pointer;border-style:solid}
+.snooze-btn:hover,.snooze-btn:active{background:#1B2B4B;color:#fff;border-color:#1B2B4B}
+.big-notif-close{background:#1B2B4B;color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:15px;font-weight:700;cursor:pointer;width:100%;margin-top:4px}
+@-webkit-keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@-webkit-keyframes popIn{from{opacity:0;-webkit-transform:scale(.85);transform:scale(.85)}to{opacity:1;-webkit-transform:scale(1);transform:scale(1)}}
+@keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+
+/* CONFETTI */
+#confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9997;display:none}
+.trophy-pop{position:fixed;top:38%;left:50%;-webkit-transform:translate(-50%,-50%);transform:translate(-50%,-50%);font-size:64px;text-align:center;z-index:9998;-webkit-animation:trophy-anim 4.4s ease forwards;animation:trophy-anim 4.4s ease forwards;pointer-events:none}
+.trophy-pop span{display:block;font-size:17px;font-weight:700;color:#fff;background:#1B2B4B;padding:5px 18px;border-radius:99px;margin-top:10px}
+@-webkit-keyframes trophy-anim{0%{opacity:0;-webkit-transform:translate(-50%,-50%) scale(.4);transform:translate(-50%,-50%) scale(.4)}20%{opacity:1;-webkit-transform:translate(-50%,-50%) scale(1.15);transform:translate(-50%,-50%) scale(1.15)}75%{opacity:1;-webkit-transform:translate(-50%,-60%) scale(1);transform:translate(-50%,-60%) scale(1)}100%{opacity:0;-webkit-transform:translate(-50%,-70%) scale(.95);transform:translate(-50%,-70%) scale(.95)}}
+@keyframes trophy-anim{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}75%{opacity:1;transform:translate(-50%,-60%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(.95)}}
+
+/* TOAST */
+.toast{position:fixed;bottom:160px;left:50%;-webkit-transform:translateX(-50%) translateY(16px);transform:translateX(-50%) translateY(16px);background:var(--nav);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;opacity:0;-webkit-transition:all .28s;transition:all .28s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;-webkit-transform:translateX(-50%) translateY(0);transform:translateX(-50%) translateY(0)}
+
+/* SETUP BANNER */
+.setup-banner{background:#FFF8EC;border-bottom:1px solid #FFE0A0;padding:8px 14px;font-size:12px;color:#9A6700;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:8px;-ms-flex-wrap:wrap;flex-wrap:wrap}
+.setup-banner a{color:var(--acc);font-weight:600}
+.setup-banner button{background:none;border:none;color:var(--mut);font-size:14px;padding:0;cursor:pointer;margin-left:auto}
+
+/* COLOR SWATCHES */
+.color-swatches{display:-webkit-box;display:-ms-flexbox;display:flex;gap:8px;-ms-flex-wrap:wrap;flex-wrap:wrap}
+.color-swatch{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid transparent;-webkit-transition:all .15s;transition:all .15s;-ms-flex-negative:0;flex-shrink:0;border-style:solid}
+.color-swatch.sel{border-color:#1A1F2E;-webkit-transform:scale(1.2);transform:scale(1.2)}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIQUID GLASS THEME — iOS 26 inspired
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Animated mesh gradient background */
+body.glass-theme {
+  background: #0D0D1A !important;
+  overflow-x: hidden;
+}
+body.glass-theme::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%,  rgba(124,58,237,.45) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 70% at 80% 20%,  rgba(59,130,246,.38) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 10% 70%,  rgba(16,185,129,.32) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 65% at 85% 75%,  rgba(236,72,153,.30) 0%, transparent 60%),
+    radial-gradient(ellipse 90% 80% at 50% 50%,  rgba(99,102,241,.18) 0%, transparent 70%);
+  -webkit-animation: meshMove 18s ease-in-out infinite alternate;
+  animation: meshMove 18s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@-webkit-keyframes meshMove {
+  0%   { opacity:1; -webkit-transform:scale(1) rotate(0deg);   transform:scale(1) rotate(0deg); }
+  33%  { opacity:.9; -webkit-transform:scale(1.06) rotate(1.5deg); transform:scale(1.06) rotate(1.5deg); }
+  66%  { opacity:.95; -webkit-transform:scale(.97) rotate(-1deg); transform:scale(.97) rotate(-1deg); }
+  100% { opacity:1; -webkit-transform:scale(1.03) rotate(.5deg);  transform:scale(1.03) rotate(.5deg); }
+}
+@keyframes meshMove {
+  0%   { opacity:1;   transform:scale(1) rotate(0deg); }
+  33%  { opacity:.9;  transform:scale(1.06) rotate(1.5deg); }
+  66%  { opacity:.95; transform:scale(.97) rotate(-1deg); }
+  100% { opacity:1;   transform:scale(1.03) rotate(.5deg); }
+}
+
+/* All glass surfaces */
+body.glass-theme #app,
+body.glass-theme .app-shell,
+body.glass-theme .task-list {
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Glass mixin — applied via class */
+.glass-surface {
+  background: rgba(255,255,255,0.07) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  backdrop-filter: blur(28px) saturate(180%) brightness(1.08);
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  box-shadow:
+    0 2px 32px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    inset 0 -1px 0 rgba(0,0,0,0.12) !important;
+}
+
+/* Topbar */
+body.glass-theme .topbar {
+  background: rgba(10,10,28,0.55) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  backdrop-filter: blur(32px) saturate(200%);
+  border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: 0 1px 24px rgba(0,0,0,.4) !important;
+}
+
+/* Stats strip */
+body.glass-theme .stats-strip {
+  background: rgba(8,8,24,0.5) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border-bottom: 1px solid rgba(255,255,255,0.09) !important;
+}
+body.glass-theme .stat-btn.active { border-bottom-color: #A78BFA !important; }
+body.glass-theme .s-num { color: #fff !important; }
+body.glass-theme .s-lbl { color: rgba(200,190,255,0.5) !important; }
+
+/* Filter bar */
+body.glass-theme .filter-bar {
+  background: rgba(12,12,30,0.48) !important;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+body.glass-theme .prio-sel {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.16) !important;
+  color: #F0EEFF !important;
+}
+
+/* Task cards — liquid glass */
+body.glass-theme .task-card {
+  background: rgba(255,255,255,0.07) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) brightness(1.1);
+  backdrop-filter: blur(24px) saturate(160%) brightness(1.1);
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-left: 3px solid rgba(255,255,255,0.08) !important;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    inset 0 -1px 0 rgba(0,0,0,0.1) !important;
+  -webkit-transition: all .2s ease;
+  transition: all .2s ease;
+}
+body.glass-theme .task-card:hover {
+  background: rgba(255,255,255,0.11) !important;
+  -webkit-transform: translateY(-1px);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.22) !important;
+}
+body.glass-theme .task-card.overdue {
+  border-left-color: rgba(255,100,100,0.7) !important;
+  background: rgba(255,80,80,0.08) !important;
+}
+body.glass-theme .task-title { color: #F0EEFF !important; }
+body.glass-theme .task-title.strike { color: rgba(200,190,255,.4) !important; }
+body.glass-theme .due-lbl { color: rgba(200,190,255,.55) !important; }
+body.glass-theme .due-lbl.overdue { color: #FF8A8A !important; }
+body.glass-theme .due-lbl.soon { color: #FDBA74 !important; }
+body.glass-theme .menu-btn { color: rgba(200,190,255,.5) !important; }
+body.glass-theme .chk { border-color: rgba(255,255,255,0.22) !important; }
+body.glass-theme .chk.done { background: #A78BFA !important; border-color: #A78BFA !important; }
+
+/* Future / snooze tags */
+body.glass-theme .future-tag {
+  background: rgba(251,191,36,0.15) !important;
+  color: #FCD34D !important;
+  border: 1px solid rgba(251,191,36,0.25);
+}
+body.glass-theme .snooze-badge {
+  background: rgba(167,139,250,0.15) !important;
+  color: #C4B5FD !important;
+  border: 1px solid rgba(167,139,250,0.25) !important;
+}
+
+/* Achievement / leaderboard strip */
+body.glass-theme .achieve-wrap {
+  background: rgba(8,8,24,0.6) !important;
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255,255,255,0.1) !important;
+}
+body.glass-theme .achieve-hd { color: rgba(200,190,255,.4) !important; }
+body.glass-theme .achieve-entry { color: #F0EEFF !important; }
+body.glass-theme .ach-cnt { color: rgba(200,190,255,.5) !important; }
+body.glass-theme .team-prog-lbl { color: rgba(200,190,255,.4) !important; }
+body.glass-theme .team-prog-bar-bg { background: rgba(255,255,255,.12) !important; }
+body.glass-theme .team-prog-bar-fill { background: linear-gradient(90deg,#A78BFA,#60A5FA) !important; }
+body.glass-theme .team-prog-val { color: rgba(200,190,255,.5) !important; }
+body.glass-theme .team-milestone { color: #FCD34D !important; }
+
+/* Team strip */
+body.glass-theme .team-strip {
+  background: rgba(8,8,24,0.65) !important;
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255,255,255,0.1) !important;
+}
+body.glass-theme .t-lbl { color: rgba(200,190,255,.4) !important; }
+body.glass-theme .tav-nm { color: rgba(200,190,255,.5) !important; }
+
+/* FAB */
+body.glass-theme .fab {
+  background: linear-gradient(135deg, rgba(167,139,250,0.9), rgba(96,165,250,0.9)) !important;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.3) !important;
+  box-shadow: 0 8px 32px rgba(167,139,250,.45), inset 0 1px 0 rgba(255,255,255,.3) !important;
+}
+
+/* Modal */
+body.glass-theme .modal-overlay { background: rgba(0,0,0,.65) !important; }
+body.glass-theme .modal {
+  background: rgba(15,12,35,0.82) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15) !important;
+}
+body.glass-theme .modal-hdr { background: transparent !important; }
+body.glass-theme .modal-hdr h2 { color: #F0EEFF !important; }
+body.glass-theme .modal-x {
+  background: rgba(255,255,255,0.1) !important;
+  color: rgba(200,190,255,.7) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+body.glass-theme .flbl { color: rgba(200,190,255,.55) !important; }
+body.glass-theme .field-input {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  color: #F0EEFF !important;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+body.glass-theme .field-input:focus { border-color: #A78BFA !important; }
+body.glass-theme .field-input::placeholder { color: rgba(200,190,255,.35) !important; }
+body.glass-theme .field-input option { background: #1A1535; color: #F0EEFF; }
+
+/* Buttons in modal */
+body.glass-theme .btn-primary {
+  background: linear-gradient(135deg,rgba(167,139,250,.85),rgba(96,165,250,.85)) !important;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  box-shadow: 0 4px 16px rgba(167,139,250,.35), inset 0 1px 0 rgba(255,255,255,.2) !important;
+  color: #fff !important;
+}
+body.glass-theme .btn-secondary {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  color: #D4C8FF !important;
+}
+body.glass-theme .btn-danger {
+  background: rgba(255,80,80,0.1) !important;
+  border-color: rgba(255,100,100,0.25) !important;
+  color: #FF8A8A !important;
+}
+body.glass-theme .action-item {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #F0EEFF !important;
+}
+body.glass-theme .action-item:hover, body.glass-theme .action-item:active {
+  background: rgba(167,139,250,0.15) !important;
+}
+body.glass-theme .action-item.danger {
+  background: rgba(255,80,80,0.08) !important;
+  border-color: rgba(255,100,100,0.2) !important;
+  color: #FF8A8A !important;
+}
+
+/* Detail items */
+body.glass-theme .ditem {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+body.glass-theme .dkey { color: rgba(200,190,255,.5) !important; }
+body.glass-theme .dval { color: #F0EEFF !important; }
+body.glass-theme .detail-desc { color: rgba(220,210,255,.75) !important; }
+
+/* Assign chips */
+body.glass-theme .assign-grid {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+body.glass-theme .assign-chip {
+  background: rgba(255,255,255,0.08) !important;
+  color: #D4C8FF !important;
+  border-color: rgba(255,255,255,0.15) !important;
+}
+
+/* Notification items */
+body.glass-theme .overdue-item {
+  background: rgba(255,80,80,0.12) !important;
+  color: #FF8A8A !important;
+}
+body.glass-theme .soon-item {
+  background: rgba(251,191,36,0.1) !important;
+  color: #FCD34D !important;
+}
+
+/* Log items */
+body.glass-theme .log-item { border-color: rgba(255,255,255,0.08) !important; }
+body.glass-theme .log-user { color: #A78BFA !important; }
+
+/* Setup banner */
+body.glass-theme .setup-banner {
+  background: rgba(251,191,36,0.08) !important;
+  border-color: rgba(251,191,36,0.2) !important;
+  color: #FCD34D !important;
+}
+
+/* Toast */
+body.glass-theme .toast {
+  background: rgba(20,15,50,0.88) !important;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5) !important;
+}
+
+/* Icon buttons */
+body.glass-theme .icon-btn {
+  background: rgba(255,255,255,0.1) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+}
+body.glass-theme .user-chip {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
+
+/* Big notification */
+body.glass-theme .big-notif-box {
+  background: rgba(15,12,40,0.88) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.18) !important;
+}
+body.glass-theme .big-notif-donow {
+  background: rgba(167,139,250,0.18) !important;
+  color: #C4B5FD !important;
+}
+body.glass-theme .big-notif-task { color: #F0EEFF !important; }
+body.glass-theme .snooze-label { color: rgba(200,190,255,.5) !important; }
+body.glass-theme .snooze-btn {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  color: #D4C8FF !important;
+}
+body.glass-theme .snooze-btn:hover, body.glass-theme .snooze-btn:active {
+  background: rgba(167,139,250,0.25) !important;
+  border-color: rgba(167,139,250,0.4) !important;
+  color: #fff !important;
+}
+body.glass-theme .big-notif-close {
+  background: linear-gradient(135deg,rgba(167,139,250,.85),rgba(96,165,250,.85)) !important;
+  border: 1px solid rgba(255,255,255,.2) !important;
+  box-shadow: 0 4px 16px rgba(167,139,250,.35) !important;
+}
+
+/* Select screen */
+body.glass-theme .select-screen,
+body.glass-theme .login-screen {
+  background: transparent !important;
+}
+body.glass-theme .select-card,
+body.glass-theme .login-card {
+  background: rgba(255,255,255,0.07) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  box-shadow: 0 16px 64px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.18) !important;
+}
+body.glass-theme .member-card {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+body.glass-theme .member-card:hover {
+  background: rgba(255,255,255,0.13) !important;
+}
+body.glass-theme .app-title,
+body.glass-theme .login-appname { color: #fff !important; }
+body.glass-theme .select-sub,
+body.glass-theme .login-sub { color: rgba(220,210,255,.5) !important; }
+body.glass-theme .m-name { color: rgba(240,238,255,.9) !important; }
+body.glass-theme .m-role { color: rgba(200,190,255,.45) !important; }
+body.glass-theme .theme-row { color: rgba(200,190,255,.35) !important; }
+body.glass-theme .theme-row a { color: rgba(200,190,255,.6) !important; }
+
+/* Login input */
+body.glass-theme .pw-wrap input {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.16) !important;
+  color: #fff !important;
+}
+body.glass-theme .login-btn {
+  background: linear-gradient(135deg,rgba(167,139,250,.9),rgba(96,165,250,.9)) !important;
+  border: 1px solid rgba(255,255,255,.2) !important;
+  box-shadow: 0 4px 24px rgba(167,139,250,.4) !important;
+}
+
+/* Empty state */
+body.glass-theme .empty-state { color: rgba(200,190,255,.45) !important; }
+
+/* Scrollbar (webkit) */
+body.glass-theme ::-webkit-scrollbar { width: 4px; height: 4px; }
+body.glass-theme ::-webkit-scrollbar-track { background: transparent; }
+body.glass-theme ::-webkit-scrollbar-thumb { background: rgba(167,139,250,.3); border-radius: 99px; }
+
+/* Colour swatches in team manager */
+body.glass-theme .color-swatch { box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+body.glass-theme .img-drop {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  color: rgba(200,190,255,.5) !important;
+}
+
+
+/* NOTIFICATION PERMISSION BANNER */
+.notif-permission-banner{position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#1B2B4B,#2A4080);color:#fff;padding:16px 18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 24px rgba(0,0,0,.4);-webkit-animation:slideDown .35s ease;animation:slideDown .35s ease}
+.notif-banner-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.notif-banner-body{font-size:13px;color:rgba(255,255,255,.75);line-height:1.5}
+.notif-banner-btns{display:flex;gap:8px}
+.notif-allow-btn{background:#E8720C;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;flex:1}
+.notif-later-btn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:10px 16px;font-size:13px;cursor:pointer}
+@-webkit-keyframes slideDown{from{-webkit-transform:translateY(-100%);transform:translateY(-100%);opacity:0}to{-webkit-transform:translateY(0);transform:translateY(0);opacity:1}}
+@keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<canvas id="confetti-canvas"></canvas>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
+         onSnapshot, serverTimestamp, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getMessaging, getToken, onMessage }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+
+// ▼▼▼ PASTE YOUR FIREBASE CONFIG HERE ▼▼▼
+const FB_CONFIG = {
+  apiKey:            "AIzaSyBgnUI_Fv9VLXvNAWdR_KxidZPajfd7s4E",
+  authDomain:        "karya-7.firebaseapp.com",
+  projectId:         "karya-7",
+  storageBucket:     "karya-7.firebasestorage.app",
+  messagingSenderId: "187526342338",
+  appId:             "1:187526342338:web:f300bbca2c6a6103cc3d5b",
+  vapidKey:          "BIjT6NCf5SkzLA_wNuFY1OacvLUKGAdouGXQTcVGRnuQm3dqmjQHvxZejGwLfgHy4pNg1hfQkGL8rWS3_DK2WiM"
+};
+// ▲▲▲ END CONFIG ▲▲▲
+
+// ── CONSTANTS ────────────────────────────────────────────────────
+const APP_PW      = "krishna";
+const SESSION_HRS = 3;
+const MEMBER_COLORS = ["#E8720C","#4F7EFF","#C47AC0","#00C896","#FF6B6B","#FFB347","#7E57C2","#26C6DA","#EF5350","#66BB6A"];
+
+const DEFAULT_TEAM = [
+  { id:"parimal", name:"Parimal",        role:"Admin",          color:"#E8720C", isAdmin:true },
+  { id:"umesh",   name:"Umesh",          role:"Team Member",    color:"#4F7EFF" },
+  { id:"neha",    name:"Neha",           role:"Team Member",    color:"#C47AC0" },
+  { id:"mitesh",  name:"HO Mitesh",      role:"HO",             color:"#00C896" },
+  { id:"pavan",   name:"Factory Pavan",  role:"Factory",        color:"#FF6B6B" },
+  { id:"govinda", name:"Govinda Jayesh", role:"Team Member",    color:"#FFB347" }
+];
+
+const THEMES = {
+  navy:   { name:"Dark Navy",      bg:"#F0F3FA", card:"#fff", nav:"#1B2B4B", nav2:"#253A63", acc:"#4F7EFF", txt:"#1A1F2E", mut:"#6B7280", bdr:"#E5E9F0", glass:false },
+  green:  { name:"Forest Green",   bg:"#F0F7F3", card:"#fff", nav:"#1B4332", nav2:"#2D6A4F", acc:"#40916C", txt:"#1A2E25", mut:"#5A7268", bdr:"#D4EDE1", glass:false },
+  orange: { name:"Vanilla Orange", bg:"#FFF8F0", card:"#fff", nav:"#7C3503", nav2:"#A84C06", acc:"#E8720C", txt:"#2E1A0A", mut:"#7A5540", bdr:"#F0DDD0", glass:false },
+  glass:  { name:"Liquid Glass",   bg:"#0D0D1A", card:"rgba(255,255,255,0.08)", nav:"rgba(15,15,35,0.72)", nav2:"rgba(20,20,50,0.65)", acc:"#A78BFA", txt:"#F0EEFF", mut:"rgba(220,210,255,0.55)", bdr:"rgba(255,255,255,0.14)", glass:true }
+};
+
+// ── STATE ────────────────────────────────────────────────────────
+let db, messaging;
+const S = {
+  authed:false, user:null, tasks:[], logs:[],
+  view:"mine", filter:"all", theme:"navy",
+  team:[], fbReady:false
+};
+
+const isConfigured = FB_CONFIG.apiKey !== "PASTE_YOUR_API_KEY";
+
+// ── BOOT ─────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  S.theme = localStorage.getItem("k_theme") || "navy";
+  loadTeam();
+  checkSession();
+  if (isConfigured) initFirebase(); else loadLocal();
+});
+
+function loadTeam() {
+  const saved = localStorage.getItem("k_team");
+  S.team = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_TEAM));
+}
+function saveTeam() { localStorage.setItem("k_team", JSON.stringify(S.team)); }
+function getTeam()  { return S.team; }
+function getMember(id) { return S.team.find(t => t.id === id) || {}; }
+
+function checkSession() {
+  const ts  = localStorage.getItem("k_sess_ts");
+  const uid = localStorage.getItem("k_sess_uid");
+  if (ts && uid && (Date.now()-+ts)/3600000 < SESSION_HRS) {
+    S.authed = true;
+    S.user   = getMember(uid);
+    if (!S.user.id) { clearSession(); } // member removed
+  } else clearSession();
+  render();
+}
+function clearSession() {
+  ["k_sess_ts","k_sess_uid"].forEach(k=>localStorage.removeItem(k));
+  S.authed=false; S.user=null;
+}
+
+// ── FIREBASE ─────────────────────────────────────────────────────
+function initFirebase() {
+  try {
+    const app = initializeApp(FB_CONFIG);
+    db = getFirestore(app);
+    S.fbReady = true;
+    onSnapshot(query(collection(db,"karya_tasks"), orderBy("createdAt","desc")), snap => {
+      S.tasks = snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderTaskArea(); updateStats();
+      // Re-schedule reminders on every data update (covers page reload)
+      rescheduleAllReminders();
+    });
+    onSnapshot(query(collection(db,"karya_logs"), orderBy("ts","desc")), snap => {
+      S.logs = snap.docs.map(d=>({id:d.id,...d.data()}));
+    });
+    try {
+      messaging = getMessaging(app);
+      onMessage(messaging, payload => {
+        const n = payload.notification || {};
+        showBigNotif(n.body || "You have a reminder", null);
+      });
+    } catch(e) { console.warn("FCM:", e); }
+  } catch(e) { console.error("Firebase:", e); loadLocal(); }
+}
+
+// ── FCM SETUP — production grade ────────────────────────────────
+let _swReg = null;
+
+async function registerSW() {
+  if (_swReg) return _swReg;
+  if (!("serviceWorker" in navigator)) return null;
+  try {
+    _swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+    await navigator.serviceWorker.ready;
+    console.log("[Karya] Service worker registered");
+    return _swReg;
+  } catch(e) {
+    console.warn("[Karya] SW registration failed (works only on HTTPS):", e.message);
+    return null;
+  }
+}
+
+async function setupFCM() {
+  if (!S.user) return;
+  // Register SW first (required for both FCM and system notifications)
+  const reg = await registerSW();
+  // Show permission banner if not yet decided
+  const perm = "Notification" in window ? Notification.permission : "denied";
+  if (perm === "default") {
+    showNotifPermissionBanner();
+  } else if (perm === "granted" && messaging && reg) {
+    await subscribeFCMToken(reg);
+  }
+}
+
+function showNotifPermissionBanner() {
+  if (document.getElementById("notif-banner")) return;
+  const el = document.createElement("div");
+  el.id = "notif-banner";
+  el.className = "notif-permission-banner";
+  el.innerHTML = \`
+    <div class="notif-banner-title">🔔 Enable Task Reminders</div>
+    <div class="notif-banner-body">Allow notifications so Karya can alert you when tasks are due — even when the app is in the background.</div>
+    <div class="notif-banner-btns">
+      <button class="notif-allow-btn" onclick="window.grantNotifPermission()">✓ Allow Notifications</button>
+      <button class="notif-later-btn" onclick="document.getElementById('notif-banner').remove()">Later</button>
+    </div>\`;
+  document.body.prepend(el);
+}
+
+window.grantNotifPermission = async function() {
+  const banner = document.getElementById("notif-banner");
+  if (banner) banner.remove();
+  try {
+    let perm;
+    // Firefox uses callback style on older versions
+    if (typeof Notification.requestPermission === "function") {
+      const result = Notification.requestPermission();
+      if (result && typeof result.then === "function") {
+        perm = await result;
+      } else {
+        perm = await new Promise(resolve => Notification.requestPermission(resolve));
+      }
+    }
+    if (perm === "granted") {
+      showToast("✅ Notifications enabled!");
+      const reg = await registerSW();
+      if (messaging && reg) await subscribeFCMToken(reg);
+    } else {
+      showToast("Notifications blocked — enable in browser settings");
+    }
+  } catch(e) { console.warn("Permission error:", e); }
+};
+
+async function subscribeFCMToken(reg) {
+  if (!messaging || !db || !FB_CONFIG.vapidKey || FB_CONFIG.vapidKey === "PASTE_YOUR_VAPID_KEY") return;
+  try {
+    const token = await getToken(messaging, {
+      vapidKey: FB_CONFIG.vapidKey,
+      serviceWorkerRegistration: reg
+    });
+    if (!token) return;
+    // Store token with user info — Cloud Function uses this to send notifications
+    // Use upsert pattern: store with userId as document ID to avoid duplicates
+    await setDoc(doc(db, "karya_fcm_tokens", S.user.id + "_" + token.slice(-8)), {
+      token,
+      userId:   S.user.id,
+      userName: S.user.name,
+      device:   navigator.userAgent.slice(0, 80),
+      ts:       serverTimestamp()
+    });
+    console.log("[Karya] FCM token stored for", S.user.name);
+  } catch(e) { console.warn("[Karya] FCM token error:", e); }
+}
+
+function loadLocal() {
+  S.tasks = JSON.parse(localStorage.getItem("k_tasks")||"[]");
+  S.logs  = JSON.parse(localStorage.getItem("k_logs") ||"[]");
+  renderTaskArea(); updateStats();
+  rescheduleAllReminders();
+}
+function saveLocal() {
+  localStorage.setItem("k_tasks", JSON.stringify(S.tasks));
+  localStorage.setItem("k_logs",  JSON.stringify(S.logs));
+}
+
+// ── LOGGING ──────────────────────────────────────────────────────
+async function addLog(action, detail) {
+  const e = { user:S.user?.name||"?", action, detail, ts:new Date().toISOString() };
+  if (S.fbReady && db) {
+    try { await addDoc(collection(db,"karya_logs"),{...e,ts:serverTimestamp()}); } catch(err){}
+  } else {
+    e.id="l"+Date.now(); S.logs.unshift(e); saveLocal();
+  }
+}
+
+// ── RENDER ───────────────────────────────────────────────────────
+function render() {
+  applyTheme();
+  const app = document.getElementById("app");
+  if (!S.authed)  { app.innerHTML = buildLogin();      return; }
+  if (!S.user?.id){ app.innerHTML = buildUserSelect(); return; }
+  app.innerHTML = buildMain();
+  renderTaskArea(); updateStats();
+  document.onkeydown = e => { if(e.key==="Escape") closeModal(); };
+}
+
+function applyTheme() {
+  const t = THEMES[S.theme] || THEMES.navy;
+  const r = document.documentElement.style;
+  r.setProperty("--bg",   t.bg);   r.setProperty("--card", t.card);
+  r.setProperty("--nav",  t.nav);  r.setProperty("--nav2", t.nav2);
+  r.setProperty("--acc",  t.acc);  r.setProperty("--txt",  t.txt);
+  r.setProperty("--mut",  t.mut);  r.setProperty("--bdr",  t.bdr);
+  // Glass theme: toggle body class and animated background
+  if (t.glass) {
+    document.body.classList.add("glass-theme");
+  } else {
+    document.body.classList.remove("glass-theme");
+  }
+}
+
+// ── GEETANJALI LOGO BLOCK ─────────────────────────────────────────
+function logoBlock(height) {
+  return `<div style="height:${height}px;background:linear-gradient(135deg,#E8720C,#FF9A00);border-radius:${Math.round(height*.18)}px;display:inline-flex;align-items:center;justify-content:center;padding:0 ${Math.round(height*.3)}px;font-weight:900;font-size:${Math.round(height*.28)}px;color:#fff;letter-spacing:-.5px;box-shadow:0 3px 12px rgba(232,114,12,.35)">गीतांजलि</div>`;
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────
+function buildLogin() {
+  return `<div class="login-screen"><div class="login-card">
+    ${logoBlock(56)}
+    <h1 class="login-appname" style="margin-top:14px">Karya</h1>
+    <p class="login-sub">Geetanjali Team Tasks</p>
+    <div class="pw-wrap">
+      <input id="pw-inp" type="password" placeholder="Enter app password" onkeydown="if(event.key==='Enter')window.doLogin()">
+      <button class="pw-toggle" onclick="const i=document.getElementById('pw-inp');i.type=i.type==='password'?'text':'password'">👁</button>
+    </div>
+    <button class="login-btn" onclick="window.doLogin()">Enter Karya</button>
+    <p id="pw-err" class="pw-err">Wrong password — try again</p>
+  </div></div>`;
+}
+
+window.doLogin = function() {
+  const v = (document.getElementById("pw-inp")?.value||"").trim().toLowerCase();
+  if (v === APP_PW) { S.authed=true; localStorage.setItem("k_sess_ts",Date.now()); render(); }
+  else { const e=document.getElementById("pw-err"); if(e) e.style.display="block"; }
+};
+
+// ── USER SELECT ───────────────────────────────────────────────────
+function buildUserSelect() {
+  const team = getTeam();
+  return `<div class="select-screen"><div class="select-card">
+    ${logoBlock(44)}
+    <h1 class="app-title" style="margin-top:10px">Karya</h1>
+    <p class="select-sub">Who are you today?</p>
+    <div class="member-grid">
+      ${team.map(m=>`
+        <button class="member-card" onclick="window.selectUser('${m.id}')">
+          <div class="av" style="background:${m.color}">${initials(m.name)}</div>
+          <div class="m-name">${esc(m.name)}${isWinner(m.id)?" 🏆":""}</div>
+          <div class="m-role">${esc(m.role)}${m.isAdmin?" 👑":""}</div>
+        </button>`).join("")}
+    </div>
+    <div class="theme-row">Theme:
+      ${Object.entries(THEMES).map(([k,v])=>`<a href="#" onclick="window.setTheme('${k}');return false">${S.theme===k?"✓ ":""}${k==="glass"?"\u{1FAA7}":""}${v.name}</a>`).join("")}
+    </div>
+  </div></div>`;
+}
+
+window.selectUser = async function(id) {
+  S.user = getMember(id);
+  if (!S.user.id) return;
+  localStorage.setItem("k_sess_uid", id);
+  localStorage.setItem("k_sess_ts",  Date.now());
+  await addLog("login", "Signed in");
+  S.view = "mine";
+  render();
+  if (S.fbReady) setupFCM();
+};
+
+window.setTheme = function(t) { S.theme=t; localStorage.setItem("k_theme",t); render(); return false; };
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function initials(name) {
+  const p = (name||"").split(" ").filter(Boolean);
+  if (!p.length) return "?";
+  return p.length===1 ? p[0][0].toUpperCase() : (p[0][0]+p[p.length-1][0]).toUpperCase();
+}
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function isWinner(id) {
+  const m = getMember(id); if (!m.name) return false;
+  const assigned = S.tasks.filter(t=>(Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo]).includes(m.name));
+  if (!assigned.length) return false;
+  return Math.round(assigned.filter(t=>t.status==="completed").length/assigned.length*100) >= 90;
+}
+function isAssigned(t, u) {
+  const names = Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo];
+  return names.includes("Everyone") || names.includes(u.name);
+}
+function fmtDue(d) {
+  const now=new Date(), tm=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  if (d.toDateString()===now.toDateString()) return "Today "+tm;
+  if (d.toDateString()===new Date(+now+86400000).toDateString()) return "Tomorrow "+tm;
+  return d.toLocaleDateString([],{month:"short",day:"numeric"})+" "+tm;
+}
+function linkify(s) {
+  if (!s) return "";
+  return s
+    .replace(/([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1" style="color:var(--acc)">$1</a>')
+    .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--acc)">$1</a>');
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────
+function buildMain() {
+  const u    = S.user;
+  const team = getTeam();
+  return `<div class="app-shell">
+    <header class="topbar">
+      <div class="t-left">${logoBlock(24)}<span class="t-appname" style="margin-left:8px">Karya</span></div>
+      <div class="t-right">
+        <button class="icon-btn" onclick="window.showNotifs()">🔔</button>
+        ${u.isAdmin?`<button class="icon-btn" onclick="window.showAdminLog()">📋</button>
+        <button class="icon-btn" onclick="window.showTeamManager()">👥</button>`:""}
+        <button class="icon-btn" onclick="window.showTheme()">🎨</button>
+        <button class="user-chip" onclick="window.switchUser()">
+          <div class="av-sm" style="background:${u.color}">${initials(u.name)}</div>
+          <span>${u.name.split(" ")[0]}${isWinner(u.id)?" 🏆":""}</span>
+        </button>
+      </div>
+    </header>
+    ${!isConfigured?`<div class="setup-banner">⚡ Demo mode — local only. <a href="#" onclick="window.showSetupGuide();return false">Connect Firebase →</a><button onclick="this.parentElement.remove()">✕</button></div>`:""}
+    <div class="stats-strip">
+      <button class="stat-btn ${S.view==="mine"?"active":""}"     onclick="window.setView('mine')">    <span class="s-num" id="sn-mine">0</span><span class="s-lbl">My Pending</span></button>
+      <div class="s-div"></div>
+      <button class="stat-btn ${S.view==="team"?"active":""}"     onclick="window.setView('team')">    <span class="s-num" id="sn-team">0</span><span class="s-lbl">Team Pending</span></button>
+      <div class="s-div"></div>
+      <button class="stat-btn ${S.view==="mydone"?"active":""}"   onclick="window.setView('mydone')">  <span class="s-num" id="sn-mydone">0</span><span class="s-lbl">My Done</span></button>
+      <div class="s-div"></div>
+      <button class="stat-btn ${S.view==="teamdone"?"active":""}" onclick="window.setView('teamdone')"><span class="s-num" id="sn-tdone">0</span><span class="s-lbl">Team Done</span></button>
+    </div>
+    <div class="filter-bar">
+      <span class="f-label">Filter:</span>
+      <select class="prio-sel" onchange="S.filter=this.value;renderTaskArea()">
+        <option value="all">All Priority</option>
+        <option value="high">🔴 High</option>
+        <option value="medium">🟡 Medium</option>
+        <option value="low">🟢 Low</option>
+      </select>
+    </div>
+    <div class="task-list" id="task-list"></div>
+    <div class="achieve-wrap" id="achieve-wrap">
+      <div class="team-prog-row" id="team-prog-row"></div>
+      <div class="achieve-scroll"><div class="achieve-inner" id="achieve-inner"></div></div>
+    </div>
+    <div class="team-strip">
+      <span class="t-lbl">Team</span>
+      <div class="t-avs">
+        ${team.map(m=>`<div class="tav-wrap"><div class="av-sm" style="background:${m.color}">${initials(m.name)}</div><span class="tav-nm">${esc(m.name.split(" ")[0])}</span></div>`).join("")}
+      </div>
+    </div>
+    <button class="fab" onclick="window.showCreate()">＋</button>
+    <div id="modal-overlay" class="modal-overlay hidden" onclick="window.closeModalClick(event)">
+      <div class="modal" id="modal-box" onclick="event.stopPropagation()"></div>
+    </div>
+  </div>`;
+}
+
+// ── TASK RENDERING ────────────────────────────────────────────────
+function renderTaskArea() {
+  const el = document.getElementById("task-list"); if (!el) return;
+  const u  = S.user; if (!u) return;
+  let tasks = [...S.tasks];
+  if (S.view==="mine")     tasks=tasks.filter(t=>t.status!=="completed"&&isAssigned(t,u));
+  if (S.view==="team")     tasks=tasks.filter(t=>t.status!=="completed");
+  if (S.view==="mydone")   tasks=tasks.filter(t=>t.status==="completed"&&isAssigned(t,u));
+  if (S.view==="teamdone") tasks=tasks.filter(t=>t.status==="completed");
+  if (S.filter!=="all")    tasks=tasks.filter(t=>t.priority===S.filter);
+  tasks.sort((a,b)=>{
+    if(a.isFuture&&!b.isFuture) return 1;
+    if(!a.isFuture&&b.isFuture) return -1;
+    const da=a.dueDate?new Date(a.dueDate+"T"+(a.dueTime||"23:59")):new Date("2099");
+    const db2=b.dueDate?new Date(b.dueDate+"T"+(b.dueTime||"23:59")):new Date("2099");
+    return da-db2;
+  });
+  el.innerHTML = tasks.length
+    ? tasks.map(buildCard).join("")
+    : `<div class="empty-state"><div class="empty-icon">📋</div><p>No tasks here — tap ＋ to add one</p></div>`;
+  renderAchievements();
+}
+
+function buildCard(t) {
+  const now=new Date();
+  const due=t.dueDate?new Date(t.dueDate+"T"+(t.dueTime||"23:59")):null;
+  const overdue=due&&due<now&&t.status!=="completed"&&!t.isFuture;
+  const soon=due&&!overdue&&(due-now)<86400000&&t.status!=="completed";
+  const pc={high:"#FF6B6B",medium:"#FFB347",low:"#00C896"}[t.priority]||"#aaa";
+  const names=Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo||"Everyone"];
+  const team=getTeam();
+  const pills=names.map(n=>{
+    if(n==="Everyone") return `<span class="assignee-pill" style="background:#1B2B4B"><span class="ap-dot"></span>Everyone</span>`;
+    const m=team.find(x=>x.name===n);
+    return `<span class="assignee-pill" style="background:${m?m.color:"#888"}"><span class="ap-dot"></span>${esc(n.split(" ")[0])}</span>`;
+  }).join("");
+  const snoozeCnt = t.snoozeCount||0;
+  return `<div class="task-card ${overdue?"overdue":""} ${t.status==="completed"?"done-card":""}">
+    <button class="chk ${t.status==="completed"?"done":""}" onclick="window.toggleTask('${t.id}')">
+      ${t.status==="completed"?"✓":""}
+    </button>
+    <div class="task-body" onclick="window.showDetail('${t.id}')">
+      <div class="task-title ${t.status==="completed"?"strike":""}">${esc(t.title)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">
+        ${t.isFuture?`<span class="future-tag">🔄 Future</span>`:""}
+        ${t.snoozed&&t.status!=="completed"?`<span class="future-tag snooze-badge" onclick="event.stopPropagation();window.showSnoozeLog('${t.id}')">⏸ Snoozed${snoozeCnt>1?" "+snoozeCnt+"×":""}</span>`:""}
+      </div>
+      <div class="assignees-row">${pills}</div>
+      <div class="task-meta">
+        <span class="prio-dot" style="background:${pc}"></span>
+        ${due?`<span class="due-lbl ${overdue?"overdue":soon?"soon":""}">${overdue?"⚠ Overdue":fmtDue(due)}</span>`:""}
+      </div>
+    </div>
+    <button class="menu-btn" onclick="window.showMenu('${t.id}')">⋮</button>
+  </div>`;
+}
+
+function updateStats() {
+  const u=S.user; if(!u) return;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set("sn-mine",  S.tasks.filter(t=>t.status!=="completed"&&isAssigned(t,u)).length);
+  set("sn-team",  S.tasks.filter(t=>t.status!=="completed").length);
+  set("sn-mydone",S.tasks.filter(t=>t.status==="completed"&&isAssigned(t,u)).length);
+  set("sn-tdone", S.tasks.filter(t=>t.status==="completed").length);
+  renderAchievements();
+}
+
+function renderAchievements() {
+  const inner=document.getElementById("achieve-inner");
+  const progRow=document.getElementById("team-prog-row");
+  if (!inner) return;
+  const team=getTeam();
+  const stats=team.map(m=>{
+    const assigned=S.tasks.filter(t=>(Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo]).includes(m.name));
+    const done=assigned.filter(t=>t.status==="completed");
+    const pct=assigned.length?Math.round(done.length/assigned.length*100):0;
+    return {name:m.name.split(" ")[0],color:m.color,pct,done:done.length,total:assigned.length,winner:pct>=90&&assigned.length>0};
+  }).sort((a,b)=>b.pct-a.pct);
+  inner.innerHTML=`<span class="achieve-hd">⚡ Efficiency</span>`
+    +stats.map(s=>`<span class="achieve-entry">${s.winner?"🏆 ":""}<span class="ach-dot" style="background:${s.color}"></span>${esc(s.name)} <span class="ach-pct">${s.pct}%</span><span class="ach-cnt">(${s.done}/${s.total})</span></span>`).join(`<span class="ach-sep">|</span>`);
+  // Team progress
+  const totalDone=S.tasks.filter(t=>t.status==="completed").length;
+  const miles=[50,100,200,500];
+  const next=miles.find(m=>m>totalDone)||miles[miles.length-1];
+  const prev=miles[miles.indexOf(next)-1]||0;
+  const pct=Math.min(100,Math.round(((totalDone-prev)/(next-prev))*100));
+  const lv=miles.indexOf(next)+1;
+  const atMile=miles.includes(totalDone);
+  if (progRow) progRow.innerHTML=`
+    <span class="team-prog-lbl">Team Goal</span>
+    <div class="team-prog-bar-bg"><div class="team-prog-bar-fill" style="width:${pct}%"></div></div>
+    <span class="team-prog-val">${totalDone}/${next}</span>
+    <span class="team-milestone" style="color:${atMile?"#FFD700":"rgba(255,255,255,.35)"}">${atMile?"🎉 Level "+lv+" Unlocked!":"Lv"+lv}</span>`;
+}
+
+window.setView = function(v) {
+  S.view=v;
+  document.querySelectorAll(".stat-btn").forEach(b=>b.classList.remove("active"));
+  const idx={mine:0,team:1,mydone:2,teamdone:3}[v];
+  if (idx!==undefined) document.querySelectorAll(".stat-btn")[idx*2]?.classList.add("active");
+  renderTaskArea(); updateStats();
+};
+
+// ── CREATE TASK ───────────────────────────────────────────────────
+window.showCreate = function() {
+  const team=getTeam();
+  const nowDt=new Date();
+  const today=nowDt.toISOString().split("T")[0];
+  const nowTime=nowDt.toTimeString().slice(0,5);
+  openModal(`
+    <div class="modal-hdr"><h2>New Task</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <label class="flbl">Task Title *</label>
+      <input id="ct-title" class="field-input" placeholder="What needs to be done?" style="font-size:16px;font-weight:700" autofocus>
+      <label class="flbl">Description / Notes</label>
+      <textarea id="ct-desc" class="field-input field-ta" placeholder="Details, links, email addresses…"></textarea>
+      <label class="flbl">Attach Image</label>
+      <div class="img-drop" id="img-drop" onclick="document.getElementById('img-file').click()">📎 Tap or paste a screenshot
+        <input id="img-file" type="file" accept="image/*" style="display:none" onchange="window.handleImgFile(this)">
+      </div>
+      <canvas id="img-prev" style="display:none;max-width:100%;border-radius:8px;margin-top:6px"></canvas>
+      <label class="flbl">Assign To (pick one or more)</label>
+      <div class="assign-grid" id="assign-grid">
+        <span class="assign-chip" data-name="Everyone" onclick="window.toggleChip(this,'create')" style="background:#1B2B4B;color:#fff;border-color:#1B2B4B">👥 Everyone</span>
+        ${team.map(m=>`<span class="assign-chip" data-name="${esc(m.name)}" data-color="${m.color}" onclick="window.toggleChip(this,'create')" style="border-color:${m.color}"><span class="chip-dot" style="background:${m.color}"></span>${esc(m.name.split(" ")[0])}</span>`).join("")}
+      </div>
+      <div class="field-row">
+        <div class="field-half"><label class="flbl">Priority</label>
+          <select id="ct-prio" class="field-input">
+            <option value="medium">🟡 Medium</option><option value="high">🔴 High</option><option value="low">🟢 Low</option>
+          </select>
+        </div>
+        <div class="field-half"><label class="flbl">Future Task?</label>
+          <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:10px;cursor:pointer">
+            <input type="checkbox" id="ct-future"> <span style="font-size:13px">🔄 Rolls over</span>
+          </label>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-half"><label class="flbl">Due Date *</label>
+          <input id="ct-date" type="date" class="field-input" value="${today}" min="${today}">
+        </div>
+        <div class="field-half"><label class="flbl">Due Time</label>
+          <input id="ct-time" type="time" class="field-input" value="${nowTime}">
+        </div>
+      </div>
+      <label class="flbl">Reminder</label>
+      <select id="ct-remind" class="field-input">
+        <option value="ontime">🔔 On Time (at due time)</option>
+        <option value="15">15 min before</option>
+        <option value="60">1 hour before</option>
+        <option value="1440">1 day before</option>
+        <option value="">No reminder</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="window.createTask()">Create Task</button>
+    </div>`);
+  document.getElementById("modal-box").addEventListener("paste", window.handlePaste);
+};
+
+window.toggleChip = function(el, mode) {
+  const gridId = mode==="create" ? "assign-grid" : "assign-grid-edit";
+  const grid   = document.getElementById(gridId); if (!grid) return;
+  const isEv   = el.dataset.name==="Everyone";
+  if (isEv) {
+    grid.querySelectorAll(".assign-chip").forEach(c=>{
+      c.classList.remove("sel-chip");
+      c.style.background=""; c.style.color=""; c.style.borderColor=c.dataset.color||"#1B2B4B";
+    });
+    el.classList.toggle("sel-chip");
+    if (el.classList.contains("sel-chip")){ el.style.background="#4F7EFF"; el.style.color="#fff"; }
+    else { el.style.background="#1B2B4B"; el.style.color="#fff"; }
+  } else {
+    const ev=grid.querySelector("[data-name='Everyone']");
+    ev.classList.remove("sel-chip"); ev.style.background="#1B2B4B"; ev.style.color="#fff";
+    el.classList.toggle("sel-chip");
+    if (el.classList.contains("sel-chip")){ el.style.background=el.dataset.color; el.style.color="#fff"; }
+    else { el.style.background=""; el.style.color=""; el.style.borderColor=el.dataset.color; }
+  }
+};
+
+function getChips(gridId) {
+  const chips=document.querySelectorAll(`#${gridId} .assign-chip.sel-chip`);
+  return chips.length ? Array.from(chips).map(c=>c.dataset.name) : ["Everyone"];
+}
+
+window.handleImgFile = function(input) {
+  const f=input.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=e=>showImgPrev(e.target.result); r.readAsDataURL(f);
+};
+window.handlePaste = function(e) {
+  const items=(e.clipboardData||e.originalEvent?.clipboardData)?.items; if(!items) return;
+  for (const item of items) if (item.type.startsWith("image")) {
+    const r=new FileReader(); r.onload=ev=>showImgPrev(ev.target.result); r.readAsDataURL(item.getAsFile());
+  }
+};
+function showImgPrev(url) {
+  window._img=url;
+  const d=document.getElementById("img-drop"); if(d) d.textContent="✅ Image attached";
+  const p=document.getElementById("img-prev"); if(!p) return;
+  p.style.display="block";
+  const ctx=p.getContext("2d"), img=new Image();
+  img.onload=()=>{p.width=img.width;p.height=img.height;ctx.drawImage(img,0,0);};
+  img.src=url;
+}
+
+window.createTask = async function() {
+  const title=(document.getElementById("ct-title")?.value||"").trim();
+  if (!title){ document.getElementById("ct-title").style.borderColor="#FF6B6B"; return; }
+  const dueDate=document.getElementById("ct-date")?.value;
+  if (!dueDate){ alert("Please set a due date."); return; }
+  const dueTime=document.getElementById("ct-time")?.value||"17:00";
+  const task={
+    title, description:(document.getElementById("ct-desc")?.value||"").trim(),
+    assignedTo:getChips("assign-grid"),
+    priority:document.getElementById("ct-prio")?.value||"medium",
+    dueDate, dueTime,
+    reminder:document.getElementById("ct-remind")?.value||"ontime",
+    isFuture:document.getElementById("ct-future")?.checked||false,
+    status:"pending", createdBy:S.user.name,
+    createdAt:new Date().toISOString(),
+    image:window._img||null
+  };
+  window._img=null;
+  if (S.fbReady&&db) {
+    const ref = await addDoc(collection(db,"karya_tasks"),{...task,createdAt:serverTimestamp()});
+    task.id = ref.id;
+  } else {
+    task.id="t"+Date.now(); S.tasks.unshift(task); saveLocal(); renderTaskArea(); updateStats();
+  }
+  scheduleReminder(task);
+  await addLog("create",`"${title}" → ${task.assignedTo.join(", ")}`);
+  closeModal(); showToast("Task created ✓");
+};
+
+// ── TOGGLE COMPLETE ───────────────────────────────────────────────
+window.toggleTask = async function(id) {
+  const t=S.tasks.find(x=>x.id===id); if (!t) return;
+  const ns=t.status==="completed"?"pending":"completed";
+  if (S.fbReady&&db) {
+    await updateDoc(doc(db,"karya_tasks",id),{status:ns});
+  } else {
+    t.status=ns; saveLocal(); renderTaskArea(); updateStats();
+  }
+  await addLog(ns==="completed"?"complete":"reopen",`"${t.title}"`);
+  if (ns==="completed"){ closeModal(); showConfetti(); showToast("🎉 Task completed!"); }
+  else showToast("Task reopened");
+};
+
+// ── DETAIL ────────────────────────────────────────────────────────
+window.showDetail = function(id) {
+  const t=S.tasks.find(x=>x.id===id); if (!t) return;
+  const due=t.dueDate?new Date(t.dueDate+"T"+(t.dueTime||"23:59")):null;
+  const names=Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo||"Everyone"];
+  const team=getTeam();
+  const pills=names.map(n=>{
+    if(n==="Everyone") return `<span class="assignee-pill" style="background:#1B2B4B">Everyone</span>`;
+    const m=team.find(x=>x.name===n);
+    return `<span class="assignee-pill" style="background:${m?m.color:"#888"}">${esc(n)}</span>`;
+  }).join("");
+  const prioLbl={high:"🔴 High",medium:"🟡 Medium",low:"🟢 Low"}[t.priority]||t.priority;
+  const log=Array.isArray(t.snoozeLog)?t.snoozeLog:[];
+  const byUser={};
+  log.forEach(e=>{ byUser[e.user]=(byUser[e.user]||0)+1; });
+  const snoozeStr=Object.entries(byUser).map(([u,c])=>`${esc(u)} ×${c}`).join(", ");
+  openModal(`
+    <div class="modal-hdr"><h2>${esc(t.title)}</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      ${t.isFuture?`<span class="future-tag">🔄 Future Task</span>`:""}
+      ${t.description?`<div class="detail-desc">${linkify(esc(t.description))}</div>`:""}
+      ${t.image?`<img src="${t.image}" style="max-width:100%;border-radius:10px;margin:4px 0" alt="Attachment">`:""}
+      <div class="detail-grid">
+        <div class="ditem"><span class="dkey">Assigned To</span><span class="dval">${pills}</span></div>
+        <div class="ditem"><span class="dkey">Priority</span><span class="dval">${prioLbl}</span></div>
+        <div class="ditem"><span class="dkey">Due</span><span class="dval">${due?due.toLocaleString([],{dateStyle:"medium",timeStyle:"short"}):"—"}</span></div>
+        <div class="ditem"><span class="dkey">Status</span><span class="dval">${t.status==="completed"?"✅ Done":"⏳ Pending"}</span></div>
+        <div class="ditem"><span class="dkey">Created by</span><span class="dval">${esc(t.createdBy||"")}</span></div>
+        ${t.snoozeCount?`<div class="ditem" style="cursor:pointer" onclick="window.showSnoozeLog('${id}')"><span class="dkey">Snooze History</span><span class="dval" style="color:#4F7EFF">⏸ ${t.snoozeCount}× · ${snoozeStr} <span style="font-size:11px">→ tap</span></span></div>`:``}
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-danger" onclick="window.deleteTask('${id}')">Delete</button>
+      <button class="btn-secondary" onclick="window.showEdit('${id}')">Edit</button>
+      <button class="btn-primary" onclick="window.toggleTask('${id}')">${t.status==="completed"?"Reopen":"Mark Done"}</button>
+    </div>`);
+};
+
+// ── EDIT ──────────────────────────────────────────────────────────
+window.showEdit = function(id) {
+  const t=S.tasks.find(x=>x.id===id); if (!t) return;
+  const team=getTeam();
+  const names=Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo||"Everyone"];
+  openModal(`
+    <div class="modal-hdr"><h2>Edit Task</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <label class="flbl">Title *</label>
+      <input id="et-title" class="field-input" value="${esc(t.title)}" style="font-size:16px;font-weight:700">
+      <label class="flbl">Description / Notes</label>
+      <textarea id="et-desc" class="field-input field-ta">${esc(t.description||"")}</textarea>
+      ${t.image?`<div><img src="${t.image}" style="max-width:100%;border-radius:8px"><button onclick="window._clearImg=true;this.parentElement.innerHTML='Image removed'" style="font-size:12px;background:none;border:none;color:#D93025;cursor:pointer;display:block;margin-top:4px">✕ Remove image</button></div>`:""}
+      <label class="flbl">Assign To</label>
+      <div class="assign-grid" id="assign-grid-edit">
+        <span class="assign-chip ${names.includes("Everyone")?"sel-chip":""}" data-name="Everyone" onclick="window.toggleChip(this,'edit')" style="background:${names.includes("Everyone")?"#4F7EFF":"#1B2B4B"};color:#fff;border-color:${names.includes("Everyone")?"#4F7EFF":"#1B2B4B"}">👥 Everyone</span>
+        ${team.map(m=>{const sel=names.includes(m.name);return `<span class="assign-chip ${sel?"sel-chip":""}" data-name="${esc(m.name)}" data-color="${m.color}" onclick="window.toggleChip(this,'edit')" style="border-color:${m.color};${sel?`background:${m.color};color:#fff`:""}"><span class="chip-dot" style="background:${m.color}"></span>${esc(m.name.split(" ")[0])}</span>`;}).join("")}
+      </div>
+      <div class="field-row">
+        <div class="field-half"><label class="flbl">Priority</label>
+          <select id="et-prio" class="field-input">
+            <option value="medium" ${t.priority==="medium"?"selected":""}>🟡 Medium</option>
+            <option value="high"   ${t.priority==="high"?"selected":""}>🔴 High</option>
+            <option value="low"    ${t.priority==="low"?"selected":""}>🟢 Low</option>
+          </select>
+        </div>
+        <div class="field-half"><label class="flbl">Future Task?</label>
+          <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:10px;cursor:pointer">
+            <input type="checkbox" id="et-future" ${t.isFuture?"checked":""}> <span style="font-size:13px">🔄 Rolls over</span>
+          </label>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-half"><label class="flbl">Due Date</label>
+          <input id="et-date" type="date" class="field-input" value="${t.dueDate||""}">
+        </div>
+        <div class="field-half"><label class="flbl">Due Time</label>
+          <input id="et-time" type="time" class="field-input" value="${t.dueTime||"17:00"}">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="window.saveEdit('${id}')">Save Changes</button>
+    </div>`);
+};
+
+window.saveEdit = async function(id) {
+  const title=(document.getElementById("et-title")?.value||"").trim(); if(!title) return;
+  const t=S.tasks.find(x=>x.id===id);
+  const upd={
+    title, description:(document.getElementById("et-desc")?.value||"").trim(),
+    assignedTo:getChips("assign-grid-edit"),
+    priority:document.getElementById("et-prio")?.value||"medium",
+    dueDate:document.getElementById("et-date")?.value||"",
+    dueTime:document.getElementById("et-time")?.value||"17:00",
+    isFuture:document.getElementById("et-future")?.checked||false,
+    image:window._clearImg?null:(t?.image||null)
+  };
+  window._clearImg=false;
+  if (S.fbReady&&db) { await updateDoc(doc(db,"karya_tasks",id),upd); }
+  else { const i=S.tasks.findIndex(x=>x.id===id); if(i>-1) S.tasks[i]={...S.tasks[i],...upd}; saveLocal(); renderTaskArea(); updateStats(); }
+  scheduleReminder({...t,...upd,id});
+  await addLog("edit",`"${title}"`);
+  closeModal(); showToast("Task updated ✓");
+};
+
+// ── DELETE ────────────────────────────────────────────────────────
+window.deleteTask = async function(id) {
+  const t=S.tasks.find(x=>x.id===id);
+  if (!confirm("Delete this task?")) return;
+  if (S.fbReady&&db) { await deleteDoc(doc(db,"karya_tasks",id)); }
+  else { S.tasks=S.tasks.filter(x=>x.id!==id); saveLocal(); renderTaskArea(); updateStats(); }
+  await addLog("delete",`"${t?.title||id}"`);
+  closeModal(); showToast("Task deleted");
+};
+
+// ── MENU ──────────────────────────────────────────────────────────
+window.showMenu = function(id) {
+  const t=S.tasks.find(x=>x.id===id); if(!t) return;
+  openModal(`
+    <div class="modal-hdr"><h2>Task Options</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><div class="action-list">
+      <button class="action-item" onclick="window.toggleTask('${id}')">${t.status==="completed"?"↩ Reopen Task":"✅ Mark as Done"}</button>
+      <button class="action-item" onclick="window.showEdit('${id}')">✏️ Edit Task</button>
+      <button class="action-item" onclick="window.showDetail('${id}')">👁 View Details</button>
+      <button class="action-item danger" onclick="window.deleteTask('${id}')">🗑 Delete Task</button>
+    </div></div>`);
+};
+
+// ── TEAM MANAGER (Admin only) ─────────────────────────────────────
+window.showTeamManager = function() {
+  const team=getTeam();
+  openModal(`
+    <div class="modal-hdr"><h2>👥 Team Manager</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div id="team-list-ui" style="display:flex;flex-direction:column;gap:8px">
+        ${team.map(m=>`
+          <div class="ditem" style="gap:10px">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+              <div class="av-sm" style="background:${m.color};width:32px;height:32px;font-size:13px;flex-shrink:0">${initials(m.name)}</div>
+              <div style="min-width:0">
+                <div style="font-weight:700;font-size:14px">${esc(m.name)}${m.isAdmin?" 👑":""}</div>
+                <div style="font-size:12px;color:var(--mut)">${esc(m.role)}</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="window.showEditMember('${m.id}')">Edit</button>
+              ${!m.isAdmin?`<button class="btn-danger" style="padding:6px 10px;font-size:12px" onclick="window.removeMember('${m.id}')">✕</button>`:""}
+            </div>
+          </div>`).join("")}
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="window.showAddMember()">＋ Add Team Member</button>
+    </div>`);
+};
+
+window.showAddMember = function() {
+  openModal(`
+    <div class="modal-hdr"><h2>Add Member</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <label class="flbl">Full Name *</label>
+      <input id="nm-name" class="field-input" placeholder="e.g. Ravi Sharma">
+      <label class="flbl">Role / Title</label>
+      <input id="nm-role" class="field-input" placeholder="e.g. Designer, Manager">
+      <label class="flbl">Avatar Colour</label>
+      <div class="color-swatches" id="nm-colors">
+        ${MEMBER_COLORS.map((c,i)=>`<div class="color-swatch ${i===0?"sel":""}" style="background:${c};border-color:${i===0?"#333":"transparent"}" data-color="${c}" onclick="window.pickColor(this,'nm-colors')"></div>`).join("")}
+      </div>
+      <input type="hidden" id="nm-color" value="${MEMBER_COLORS[0]}">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="window.showTeamManager()">Back</button>
+      <button class="btn-primary" onclick="window.addMember()">Add Member</button>
+    </div>`);
+};
+
+window.pickColor = function(el, containerId) {
+  document.querySelectorAll(`#${containerId} .color-swatch`).forEach(s=>{ s.classList.remove("sel"); s.style.borderColor="transparent"; });
+  el.classList.add("sel"); el.style.borderColor="#333";
+  const inp=document.getElementById(containerId==="nm-colors"?"nm-color":"em-color");
+  if(inp) inp.value=el.dataset.color;
+};
+
+window.addMember = function() {
+  const name=(document.getElementById("nm-name")?.value||"").trim();
+  if (!name){ alert("Name is required"); return; }
+  const member={
+    id:"m"+Date.now(),
+    name, role:(document.getElementById("nm-role")?.value||"").trim()||"Team Member",
+    color:document.getElementById("nm-color")?.value||MEMBER_COLORS[0],
+    isAdmin:false
+  };
+  S.team.push(member); saveTeam();
+  showToast(`${name} added ✓`); closeModal();
+  render();
+};
+
+window.showEditMember = function(id) {
+  const m=getMember(id); if(!m.id) return;
+  openModal(`
+    <div class="modal-hdr"><h2>Edit Member</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <label class="flbl">Name *</label>
+      <input id="em-name" class="field-input" value="${esc(m.name)}">
+      <label class="flbl">Role / Title</label>
+      <input id="em-role" class="field-input" value="${esc(m.role)}">
+      <label class="flbl">Avatar Colour</label>
+      <div class="color-swatches" id="em-colors">
+        ${MEMBER_COLORS.map(c=>`<div class="color-swatch ${c===m.color?"sel":""}" style="background:${c};border-color:${c===m.color?"#333":"transparent"}" data-color="${c}" onclick="window.pickColor(this,'em-colors')"></div>`).join("")}
+      </div>
+      <input type="hidden" id="em-color" value="${m.color}">
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="window.showTeamManager()">Back</button>
+      <button class="btn-primary" onclick="window.saveMember('${id}')">Save</button>
+    </div>`);
+};
+
+window.saveMember = function(id) {
+  const name=(document.getElementById("em-name")?.value||"").trim();
+  if (!name){ alert("Name is required"); return; }
+  const i=S.team.findIndex(m=>m.id===id); if(i===-1) return;
+  const oldName=S.team[i].name;
+  S.team[i]={ ...S.team[i], name, role:(document.getElementById("em-role")?.value||"").trim()||S.team[i].role, color:document.getElementById("em-color")?.value||S.team[i].color };
+  // Update tasks assigned to old name
+  S.tasks.forEach(t=>{
+    const names=Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo];
+    if(names.includes(oldName)){ t.assignedTo=names.map(n=>n===oldName?name:n); }
+  });
+  saveTeam(); saveLocal();
+  if(S.user?.id===id) S.user=S.team[i];
+  showToast("Member updated ✓"); closeModal(); render();
+};
+
+window.removeMember = function(id) {
+  const m=getMember(id);
+  if (!confirm(`Remove ${m.name} from the team? Their tasks will remain.`)) return;
+  S.team=S.team.filter(t=>t.id!==id);
+  saveTeam();
+  if(S.user?.id===id){ clearSession(); render(); return; }
+  showToast(`${m.name} removed`); closeModal(); render();
+};
+
+// ── SWITCH USER ───────────────────────────────────────────────────
+window.switchUser = function() { S.user=null; clearSession(); render(); };
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────
+window.showNotifs = function() {
+  const now=new Date();
+  const ov=S.tasks.filter(t=>t.status!=="completed"&&!t.isFuture&&t.dueDate&&new Date(t.dueDate+"T"+(t.dueTime||"23:59"))<now);
+  const sn=S.tasks.filter(t=>{if(t.status==="completed"||t.isFuture||!t.dueDate) return false;const d=new Date(t.dueDate+"T"+(t.dueTime||"23:59"));return d>now&&(d-now)<86400000;});
+  openModal(`
+    <div class="modal-hdr"><h2>🔔 Reminders</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      ${ov.length?`<div class="notif-sec"><div class="ns-title" style="color:#D93025">⚠️ Overdue (${ov.length})</div>${ov.map(t=>`<div class="notif-item overdue-item" onclick="closeModal();window.showDetail('${t.id}')">${esc(t.title)}</div>`).join("")}</div>`:""}
+      ${sn.length?`<div class="notif-sec"><div class="ns-title" style="color:#9A6700">⏰ Due within 24h (${sn.length})</div>${sn.map(t=>`<div class="notif-item soon-item" onclick="closeModal();window.showDetail('${t.id}')">${esc(t.title)}</div>`).join("")}</div>`:""}
+      ${!ov.length&&!sn.length?`<div style="text-align:center;padding:30px;color:var(--mut)">✅ All clear!</div>`:""}
+    </div>`);
+};
+
+// ── REMINDER ENGINE ───────────────────────────────────────────────
+const _scheduled = new Set(); // track task IDs already scheduled this session
+
+function rescheduleAllReminders() {
+  // Called on every data load/reload — re-arms all pending reminders
+  S.tasks.forEach(t => {
+    if (t.status==="completed" || !t.dueDate || _scheduled.has(t.id)) return;
+    const due=new Date(t.dueDate+"T"+(t.dueTime||"23:59"));
+    let remindAt;
+    if (!t.reminder || t.reminder==="ontime") remindAt=due;
+    else if (t.reminder==="") return;
+    else remindAt=new Date(due.getTime()-parseInt(t.reminder)*60000);
+    if (remindAt > new Date()) {
+      _doSchedule(t, remindAt);
+      _scheduled.add(t.id);
+    }
+  });
+}
+
+function scheduleReminder(task) {
+  if (!task.dueDate || task.status==="completed") return;
+  const due=new Date(task.dueDate+"T"+(task.dueTime||"23:59"));
+  let remindAt;
+  if (!task.reminder || task.reminder==="ontime") remindAt=due;
+  else if (task.reminder==="") return;
+  else remindAt=new Date(due.getTime()-parseInt(task.reminder)*60000);
+  if (remindAt <= new Date()) return;
+  _scheduled.delete(task.id); // allow rescheduling
+  _doSchedule(task, remindAt);
+  _scheduled.add(task.id);
+  // Request OS notification permission proactively
+  if ("Notification" in window && Notification.permission==="default") Notification.requestPermission().catch(()=>{});
+}
+
+function _doSchedule(task, remindAt) {
+  const delay = remindAt - new Date();
+  if (delay <= 0) return;
+  const MAX = 2000000000; // ~24 days
+  setTimeout(async () => {
+    const title = "⏰ Karya — Do Now";
+    const body  = task.title;
+    const tag   = "karya-" + (task.id||"task");
+
+    // Method 1: Service Worker notification (BEST — works minimized, persistent on Android+Windows)
+    let swShown = false;
+    try {
+      if (_swReg && "Notification" in window && Notification.permission === "granted") {
+        await _swReg.showNotification(title, {
+          body,
+          tag,
+          icon:               "/karya-icon-192.png",
+          badge:              "/karya-badge-96.png",
+          requireInteraction: true,
+          renotify:           true,
+          vibrate:            [300,100,300,100,300],
+          data:               { taskId: task.id||"", url: location.href }
+        });
+        swShown = true;
+        console.log("[Karya] SW notification shown for:", body);
+      }
+    } catch(e) { console.warn("[Karya] SW notification failed:", e); }
+
+    // Method 2: Window Notification API fallback
+    if (!swShown && "Notification" in window && Notification.permission === "granted") {
+      try {
+        new Notification(title, { body, tag, requireInteraction: true, icon: "/karya-icon-192.png" });
+        swShown = true;
+      } catch(e) {}
+    }
+
+    // Method 3: Always show in-app big overlay (visible when app is open/focused)
+    showBigNotif(body, task.id||"");
+
+  }, Math.min(delay, MAX));
+}
+
+// ── BIG NOTIFICATION (persistent, 40% screen) ────────────────────
+function playChime() {
+  try {
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    function bell(t,freq,dur){
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type="sine"; o.frequency.setValueAtTime(freq,t);
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.4,t+.01); g.gain.exponentialRampToValueAtTime(.001,t+dur);
+      o.start(t); o.stop(t+dur);
+      const o2=ctx.createOscillator(), g2=ctx.createGain();
+      o2.connect(g2); g2.connect(ctx.destination);
+      o2.type="sine"; o2.frequency.setValueAtTime(freq*2.76,t);
+      g2.gain.setValueAtTime(0,t); g2.gain.linearRampToValueAtTime(.16,t+.01); g2.gain.exponentialRampToValueAtTime(.001,t+dur*.65);
+      o2.start(t); o2.stop(t+dur);
+    }
+    const now=ctx.currentTime;
+    bell(now+.05,880,1.6); bell(now+1.1,880,1.6); bell(now+2.15,880,1.6);
+  } catch(e){ console.warn("Chime:",e); }
+}
+
+function showBigNotif(taskTitle, taskId) {
+  document.querySelectorAll(".big-notif-overlay").forEach(e=>e.remove());
+  playChime();
+  const el=document.createElement("div");
+  el.className="big-notif-overlay";
+  const tid=taskId||"";
+  el.innerHTML=`<div class="big-notif-box">
+    <div class="big-notif-icon">🔔</div>
+    <div class="big-notif-donow">Do Now</div>
+    <div class="big-notif-task">${esc(taskTitle)}</div>
+    <div class="snooze-label">Reschedule</div>
+    <div class="snooze-row">
+      <button class="snooze-btn" onclick="window.snoozeTask('${tid}',30,this)">+30 min</button>
+      <button class="snooze-btn" onclick="window.snoozeTask('${tid}',60,this)">+1 hour</button>
+      <button class="snooze-btn" onclick="window.snoozeTask('${tid}',120,this)">+2 hours</button>
+      <button class="snooze-btn" onclick="window.snoozeTask('${tid}','tomorrow',this)">Tomorrow</button>
+    </div>
+    <button class="big-notif-close" onclick="this.closest('.big-notif-overlay').remove()">✓ Got it — on my way</button>
+  </div>`;
+  document.body.appendChild(el);
+  // PERSISTENT — no auto-dismiss
+}
+
+window.snoozeTask = async function(id, mins, btn) {
+  if (!id) { btn.closest(".big-notif-overlay").remove(); return; }
+  const t=S.tasks.find(x=>x.id===id);
+  if (!t) { btn.closest(".big-notif-overlay").remove(); return; }
+  const currentDue=t.dueDate?new Date(t.dueDate+"T"+(t.dueTime||"23:59")):new Date();
+  let newDue;
+  if (mins==="tomorrow") { newDue=new Date(currentDue); newDue.setDate(newDue.getDate()+1); newDue.setHours(9,0,0,0); }
+  else newDue=new Date(currentDue.getTime()+mins*60000);
+  const newDate=newDue.toISOString().split("T")[0];
+  const newTime=newDue.toTimeString().slice(0,5);
+  const label=mins==="tomorrow"?"Tomorrow 9am":`+${mins>=60?(mins/60)+"hr":mins+"min"}`;
+  const snoozeLog=Array.isArray(t.snoozeLog)?[...t.snoozeLog]:[];
+  snoozeLog.push({ user:S.user.name, mins, label, ts:new Date().toISOString() });
+  const upd={ dueDate:newDate, dueTime:newTime, snoozed:true, snoozeCount:snoozeLog.length, snoozeLog, reminder:"ontime" };
+  if (S.fbReady&&db) { await updateDoc(doc(db,"karya_tasks",id),upd); }
+  else { const i=S.tasks.findIndex(x=>x.id===id); if(i>-1) S.tasks[i]={...S.tasks[i],...upd}; saveLocal(); renderTaskArea(); updateStats(); }
+  _scheduled.delete(id);
+  scheduleReminder({...t,...upd,id});
+  btn.closest(".big-notif-overlay").remove();
+  showToast(`⏸ Snoozed to ${label}`);
+  await addLog("snooze",`"${t.title}" → ${label} (snooze #${snoozeLog.length} by ${S.user.name})`);
+};
+
+// ── SNOOZE LOG ────────────────────────────────────────────────────
+window.showSnoozeLog = function(id) {
+  const t=S.tasks.find(x=>x.id===id); if (!t) return;
+  const log=Array.isArray(t.snoozeLog)?t.snoozeLog:[];
+  const byUser={};
+  log.forEach(e=>{ if(!byUser[e.user]) byUser[e.user]={count:0,entries:[]}; byUser[e.user].count++; byUser[e.user].entries.push(e); });
+  const team=getTeam();
+  const rows=Object.entries(byUser).map(([name,data])=>{
+    const m=team.find(x=>x.name===name), col=m?m.color:"#888";
+    const last=data.entries[data.entries.length-1];
+    const lts=new Date(last.ts).toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+    return `<div class="ditem" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:${col};display:inline-block"></span><strong>${esc(name)}</strong><span style="background:#EEF2FF;color:#4F7EFF;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:700">⏸ ${data.count}×</span></div>
+      <div style="font-size:11px;color:var(--mut);padding-left:16px">Last: ${lts} → ${esc(last.label||"")}</div>
+    </div>`;
+  }).join("");
+  openModal(`
+    <div class="modal-hdr"><h2>⏸ Snooze History</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div style="background:#EEF2FF;border-radius:10px;padding:10px 14px;margin-bottom:4px">
+        <div style="font-size:13px;font-weight:700;color:#4F7EFF">📋 ${esc(t.title)}</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:3px">Total: <strong>${log.length}</strong> snooze${log.length!==1?"s":""}</div>
+      </div>
+      ${rows||`<div style="text-align:center;padding:20px;color:var(--mut)">No snooze history</div>`}
+      <div style="font-size:11px;color:var(--mut);padding:6px 2px;line-height:1.8">
+        ${log.map((e,i)=>`<span style="display:block">${i+1}. <strong>${esc(e.user)}</strong> → ${esc(e.label)} <span style="color:#aaa">(${new Date(e.ts).toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})})</span></span>`).join("")}
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="closeModal()">Close</button>
+      <button class="btn-primary" onclick="closeModal();window.showDetail('${id}')">View Task</button>
+    </div>`);
+};
+
+// ── ADMIN LOG ─────────────────────────────────────────────────────
+window.showAdminLog = function() {
+  const logs=S.logs.slice(0,80);
+  const team=getTeam();
+  const lastSeen={};
+  logs.forEach(l=>{ if(l.action==="login"&&!lastSeen[l.user]) lastSeen[l.user]=l.ts; });
+  const inactive=team.filter(m=>!lastSeen[m.name]);
+  openModal(`
+    <div class="modal-hdr"><h2>📋 Activity Log</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+      ${inactive.length?`<div style="background:#FFF8EC;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#9A6700"><strong>⚠️ Not yet active:</strong> ${inactive.map(m=>`<span style="display:inline-flex;align-items:center;gap:3px;margin:2px 4px"><span style="width:8px;height:8px;border-radius:50%;background:${m.color};display:inline-block"></span>${esc(m.name)}</span>`).join("")}</div>`:""}
+      ${logs.length?logs.map(l=>{
+        const ts=l.ts?.toDate?l.ts.toDate():new Date(l.ts);
+        return `<div class="log-item"><span class="log-user">${esc(l.user)}</span><span style="color:var(--mut)">${esc(l.action)}</span><span style="flex:1;color:var(--txt)">${esc(l.detail)}</span><span class="log-ts">${ts.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span></div>`;
+      }).join(""):`<p style="color:var(--mut);text-align:center;padding:20px">No activity yet.</p>`}
+    </div>`);
+};
+
+// ── THEME ─────────────────────────────────────────────────────────
+window.showTheme = function() {
+  openModal(`
+    <div class="modal-hdr"><h2>🎨 Theme</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><div class="action-list">
+      ${Object.entries(THEMES).map(([k,v])=>`<button class="action-item" onclick="window.setTheme('${k}');closeModal()" style="${S.theme===k?"border-color:var(--acc)":""}">${S.theme===k?"✓ ":""}${k==="glass"?"\u{1FAA7} ":""}${v.name}</button>`).join("")}
+    </div></div>`);
+};
+
+// ── SETUP GUIDE ───────────────────────────────────────────────────
+window.showSetupGuide = function() {
+  openModal(`
+    <div class="modal-hdr"><h2>Connect Firebase</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" style="max-height:75vh;overflow-y:auto">
+      <div style="background:#EFF6FF;border-radius:10px;padding:12px 14px;font-size:13px;color:#1D4ED8;margin-bottom:8px">ℹ️ Firebase syncs all devices live. It's completely free.</div>
+      ${[["1","Go to <a href='https://console.firebase.google.com' target='_blank'>console.firebase.google.com</a>"],["2","Add project → name it Karya-Geetanjali"],["3","Click the Web (&lt;/&gt;) icon → Register app"],["4","Copy the firebaseConfig and paste into karya.html"],["5","Firestore Database → Create database → Test mode"],["6","Project Settings → Cloud Messaging → Generate VAPID key → paste into karya.html"],["7","See SETUP-GUIDE.md for Cloud Functions and GitHub Pages setup"]].map(([n,t])=>`<div style="display:flex;gap:10px;margin-bottom:10px"><span style="width:22px;height:22px;border-radius:50%;background:var(--nav);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${n}</span><div style="font-size:13px;line-height:1.6">${t}</div></div>`).join("")}
+    </div>`);
+};
+
+// ── CONFETTI ─────────────────────────────────────────────────────
+function showConfetti() {
+  const c=document.getElementById("confetti-canvas"); if(!c) return;
+  c.style.display="block"; c.width=window.innerWidth; c.height=window.innerHeight;
+  const ctx=c.getContext("2d");
+  const pieces=Array.from({length:140},()=>({
+    x:Math.random()*c.width,y:-10,
+    vx:(Math.random()-.5)*7,vy:Math.random()*5+2,
+    s:Math.random()*9+4,rot:Math.random()*360,rv:(Math.random()-.5)*9,
+    col:["#FF6B6B","#FFD700","#4F7EFF","#00C896","#E8720C","#C47AC0","#fff"][Math.floor(Math.random()*7)]
+  }));
+  let f=0;
+  (function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    pieces.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.rot+=p.rv;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.fillStyle=p.col;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);ctx.restore();});
+    if(++f<200) requestAnimationFrame(draw); else c.style.display="none";
+  })();
+  const tr=document.createElement("div"); tr.className="trophy-pop";
+  tr.innerHTML="🏆<br><span>Well done!</span>";
+  document.body.appendChild(tr);
+  setTimeout(()=>tr.remove(),4800);
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────
+function openModal(html) {
+  document.getElementById("modal-overlay").classList.remove("hidden");
+  document.getElementById("modal-box").innerHTML=html;
+}
+window.closeModal=function(){ document.getElementById("modal-overlay").classList.add("hidden"); };
+window.closeModalClick=function(e){ if(e.target===document.getElementById("modal-overlay")) closeModal(); };
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t=document.createElement("div"); t.className="toast"; t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add("show"),10);
+  setTimeout(()=>{ t.classList.remove("show"); setTimeout(()=>t.remove(),300); },2600);
+}
+</script>
+</body>
+</html>
