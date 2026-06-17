@@ -766,13 +766,21 @@ function showNotifPermissionBanner() {
   const el = document.createElement("div");
   el.id = "notif-banner";
   el.className = "notif-permission-banner";
-  el.innerHTML = \`
-    <div class="notif-banner-title">🔔 Enable Task Reminders</div>
-    <div class="notif-banner-body">Allow notifications so Karya can alert you when tasks are due — even when the app is in the background.</div>
-    <div class="notif-banner-btns">
-      <button class="notif-allow-btn" onclick="window.grantNotifPermission()">✓ Allow Notifications</button>
-      <button class="notif-later-btn" onclick="document.getElementById('notif-banner').remove()">Later</button>
-    </div>\`;
+  const html_parts = [
+    "<div class=\"notif-banner-title\">",
+    String.fromCodePoint(0x1F514) + " Enable Task Reminders",
+    "</div>",
+    "<div class=\"notif-banner-body\">",
+    "Allow notifications so Karya can alert you when tasks are due, even when the app is minimised.",
+    "</div>",
+    "<div class=\"notif-banner-btns\">",
+    "<button class=\"notif-allow-btn\" onclick=\"window.grantNotifPermission()\">",
+    String.fromCodePoint(0x2713) + " Allow Notifications",
+    "</button>",
+    "<button class=\"notif-later-btn\" onclick=\"document.getElementById('notif-banner').remove()\">Later</button>",
+    "</div>"
+  ];
+  el.innerHTML = html_parts.join("");
   document.body.prepend(el);
 }
 
