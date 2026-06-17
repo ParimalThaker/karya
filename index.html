@@ -79,7 +79,7 @@ a{color:var(--acc)}
 .task-card{background:var(--card);border-radius:var(--r);padding:12px 10px 12px 12px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start;gap:9px;box-shadow:var(--sh);border-left:3px solid transparent;-webkit-transition:opacity .2s;transition:opacity .2s}
 .task-card.overdue{border-left-color:#FF6B6B}
 .task-card.done-card{opacity:.55}
-.chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--bdr);background:none;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;-webkit-transition:all .2s;transition:all .2s;-ms-flex-negative:0;flex-shrink:0;margin-top:1px;-webkit-tap-highlight-color:transparent}
+.chk{width:26px;height:26px;border-radius:50%;border:3px solid #888;background:none;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;-webkit-transition:all .2s;transition:all .2s;-ms-flex-negative:0;flex-shrink:0;margin-top:1px;-webkit-tap-highlight-color:transparent}
 .chk.done{background:#00C896;border-color:#00C896}
 .task-body{-webkit-box-flex:1;-ms-flex:1;flex:1;cursor:pointer;min-width:0}
 .task-title{font-size:28px;font-weight:800;color:var(--txt);line-height:1.15;margin-bottom:4px}
@@ -188,9 +188,10 @@ a{color:var(--acc)}
 /* BIG NOTIFICATION — persistent, 40% screen */
 .big-notif-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.78);z-index:9998;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:16px;-webkit-animation:fadeIn .25s ease;animation:fadeIn .25s ease}
 .big-notif-box{background:#fff;border-radius:22px;padding:28px 22px 22px;width:100%;max-width:440px;min-height:44vh;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.45);-webkit-animation:popIn .3s ease;animation:popIn .3s ease;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;gap:10px}
-.big-notif-icon{font-size:48px}
-.big-notif-donow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:#E8720C;background:#FFF3E0;padding:4px 14px;border-radius:99px}
-.big-notif-task{font-size:48px;font-weight:900;color:#1A1F2E;line-height:1.1;word-break:break-word;width:100%}
+.big-notif-task-row{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;gap:12px;width:100%}
+.big-notif-icon{font-size:40px;-ms-flex-negative:0;flex-shrink:0}
+.big-notif-task{font-size:32px;font-weight:700;color:#1A1F2E;line-height:1.2;word-break:break-word;text-align:left}
+.big-notif-donow{font-size:13px;font-weight:400;color:#888;letter-spacing:.02em}
 .snooze-label{font-size:11px;color:#6B7280;font-weight:500}
 .snooze-row{display:-webkit-box;display:-ms-flexbox;display:flex;gap:7px;width:100%;-ms-flex-wrap:wrap;flex-wrap:wrap;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center}
 .snooze-btn{-webkit-box-flex:1;-ms-flex:1;flex:1;min-width:90px;background:#F0F3FA;border:1.5px solid #E5E9F0;border-radius:10px;padding:9px 6px;font-size:12px;font-weight:600;color:#1B2B4B;cursor:pointer;border-style:solid}
@@ -597,6 +598,8 @@ body.glass-theme ::-webkit-scrollbar-thumb { background: rgba(167,139,250,.3); b
 
 /* Colour swatches in team manager */
 body.glass-theme .color-swatch { box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+body.glass-theme .tp-sel{background:rgba(255,255,255,0.07)!important;border-color:rgba(255,255,255,0.14)!important;color:#F0EEFF!important}
+body.glass-theme .tp-col{color:#F0EEFF!important}
 body.glass-theme .img-drop {
   background: rgba(255,255,255,0.04) !important;
   border-color: rgba(255,255,255,0.14) !important;
@@ -613,6 +616,15 @@ body.glass-theme .img-drop {
 .notif-later-btn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:10px 16px;font-size:13px;cursor:pointer}
 @-webkit-keyframes slideDown{from{-webkit-transform:translateY(-100%);transform:translateY(-100%);opacity:0}to{-webkit-transform:translateY(0);transform:translateY(0);opacity:1}}
 @keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}
+
+
+
+
+/* TIME PICKER */
+.tpick{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:4px}
+.tp-sel{-webkit-box-flex:1;-ms-flex:1;flex:1;padding:10px 4px!important;text-align:center;min-width:0}
+.tp-ap{-webkit-box-flex:1.3;-ms-flex:1.3;flex:1.3}
+.tp-col{font-size:18px;font-weight:700;color:var(--txt);padding:0 1px;-ms-flex-negative:0;flex-shrink:0}
 
 </style>
 </head>
@@ -641,7 +653,7 @@ const FB_CONFIG = {
 
 // ── CONSTANTS ────────────────────────────────────────────────────
 const APP_PW      = "krishna";
-const SESSION_HRS = 3;
+const SESSION_HRS = 12;
 const MEMBER_COLORS = ["#E8720C","#4F7EFF","#C47AC0","#00C896","#FF6B6B","#FFB347","#7E57C2","#26C6DA","#EF5350","#66BB6A"];
 
 const DEFAULT_TEAM = [
@@ -670,13 +682,59 @@ const S = {
 
 const isConfigured = FB_CONFIG.apiKey !== "PASTE_YOUR_API_KEY";
 
+
+
+
+// ── 12-HOUR TIME PICKER HELPERS ───────────────────────────────────
+function to12(t24) {
+  if (!t24) return {h:"5",m:"00",ap:"PM"};
+  var parts = t24.split(":"), h = parseInt(parts[0]), m = parts[1]||"00";
+  var ap = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return {h:String(h), m:m, ap:ap};
+}
+function to24(h,m,ap) {
+  var hour = parseInt(h);
+  if (ap==="PM" && hour!==12) hour+=12;
+  if (ap==="AM" && hour===12) hour=0;
+  return String(hour).padStart(2,"0")+":"+String(m).padStart(2,"0");
+}
+window.syncTime = function(id) {
+  var h  = document.getElementById(id+"-h");
+  var m  = document.getElementById(id+"-m");
+  var ap = document.getElementById(id+"-ap");
+  var hid = document.getElementById(id+"-hidden");
+  if (h && m && ap && hid) hid.value = to24(h.value, m.value, ap.value);
+};
+function buildTimePicker(id, val24) {
+  var t = to12(val24||"17:00");
+  var hrs = "", mins = "", aps = "";
+  for (var i=1; i<=12; i++) {
+    hrs += "<option" + (String(i)===t.h?" selected":"") + ">" + i + "</option>";
+  }
+  var mArr = ["00","05","10","15","20","25","30","35","40","45","50","55"];
+  for (var j=0; j<mArr.length; j++) {
+    mins += "<option" + (mArr[j]===t.m?" selected":"") + ">" + mArr[j] + "</option>";
+  }
+  aps = "<option" + (t.ap==="AM"?" selected":"") + ">AM</option>"
+      + "<option" + (t.ap==="PM"?" selected":"") + ">PM</option>";
+  return "<div class='tpick'>"
+    + "<select class='field-input tp-sel' id='" + id + "-h' onchange='window.syncTime(\"" + id + "\")'>" + hrs + "</select>"
+    + "<span class='tp-col'>:</span>"
+    + "<select class='field-input tp-sel' id='" + id + "-m' onchange='window.syncTime(\"" + id + "\")'>" + mins + "</select>"
+    + "<select class='field-input tp-sel tp-ap' id='" + id + "-ap' onchange='window.syncTime(\"" + id + "\")'>" + aps + "</select>"
+    + "<input type='hidden' id='" + id + "-hidden' value='" + (val24||"17:00") + "'>"
+    + "</div>";
+}
+// ── END TIME PICKER ───────────────────────────────────────────────
 // ── BOOT ─────────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
   S.theme = localStorage.getItem("k_theme") || "navy";
   loadTeam();
   checkSession();
   if (isConfigured) {
-    try { initFirebase(); } catch(e) { console.error("Firebase init failed:", e); loadLocal(); }
+    try { initFirebase(); showLoadingState(); } catch(e) { console.error("Firebase init failed:", e); loadLocal(); }
   } else {
     loadLocal();
   }
@@ -766,7 +824,7 @@ function showNotifPermissionBanner() {
   const el = document.createElement("div");
   el.id = "notif-banner";
   el.className = "notif-permission-banner";
-  const html_parts = [
+  el.innerHTML = [
     "<div class=\"notif-banner-title\">",
     String.fromCodePoint(0x1F514) + " Enable Task Reminders",
     "</div>",
@@ -779,8 +837,7 @@ function showNotifPermissionBanner() {
     "</button>",
     "<button class=\"notif-later-btn\" onclick=\"document.getElementById('notif-banner').remove()\">Later</button>",
     "</div>"
-  ];
-  el.innerHTML = html_parts.join("");
+  ].join("");
   document.body.prepend(el);
 }
 
@@ -859,6 +916,16 @@ function render() {
   app.innerHTML = buildMain();
   renderTaskArea(); updateStats();
   document.onkeydown = e => { if(e.key==="Escape") closeModal(); };
+}
+
+function showLoadingState() {
+  const el = document.getElementById("task-list");
+  if (el && S.tasks.length === 0) {
+    el.innerHTML = '<div class="empty-state" id="loading-state">'
+      + '<div style="font-size:32px;margin-bottom:12px">⏳</div>'
+      + '<p>Loading tasks...</p>'
+      + '</div>';
+  }
 }
 
 function applyTheme() {
@@ -1118,9 +1185,13 @@ function renderAchievements() {
 
 window.setView = function(v) {
   S.view=v;
-  document.querySelectorAll(".stat-btn").forEach(b=>b.classList.remove("active"));
-  const idx={mine:0,team:1,mydone:2,teamdone:3}[v];
-  if (idx!==undefined) document.querySelectorAll(".stat-btn")[idx*2]?.classList.add("active");
+  // Fix: stat-btns are at indices 0,2,4,6 (dividers at 1,3,5)
+  // Select only actual buttons not dividers
+  const btns = Array.from(document.querySelectorAll(".stat-btn"));
+  btns.forEach(b=>b.classList.remove("active"));
+  const viewMap={mine:0, team:1, mydone:2, teamdone:3};
+  const idx = viewMap[v];
+  if (idx !== undefined && btns[idx]) btns[idx].classList.add("active");
   renderTaskArea(); updateStats();
 };
 
@@ -1164,7 +1235,7 @@ window.showCreate = function() {
           <input id="ct-date" type="date" class="field-input" value="${today}" min="${today}">
         </div>
         <div class="field-half"><label class="flbl">Due Time</label>
-          <input id="ct-time" type="time" class="field-input" value="${nowTime}">
+          ${buildTimePicker("ct-time", nowTime)}
         </div>
       </div>
       <label class="flbl">Reminder</label>
@@ -1347,7 +1418,7 @@ window.showEdit = function(id) {
           <input id="et-date" type="date" class="field-input" value="${t.dueDate||""}">
         </div>
         <div class="field-half"><label class="flbl">Due Time</label>
-          <input id="et-time" type="time" class="field-input" value="${t.dueTime||"17:00"}">
+          ${buildTimePicker("et-time", t.dueTime||"17:00")}
         </div>
       </div>
     </div>
@@ -1365,7 +1436,7 @@ window.saveEdit = async function(id) {
     assignedTo:getChips("assign-grid-edit"),
     priority:document.getElementById("et-prio")?.value||"medium",
     dueDate:document.getElementById("et-date")?.value||"",
-    dueTime:document.getElementById("et-time")?.value||"17:00",
+    dueTime:document.getElementById("et-time-hidden")?.value||document.getElementById("et-time")?.value||"17:00",
     isFuture:document.getElementById("et-future")?.checked||false,
     image:window._clearImg?null:(t?.image||null)
   };
@@ -1567,44 +1638,59 @@ function scheduleReminder(task) {
 function _doSchedule(task, remindAt) {
   const delay = remindAt - new Date();
   if (delay <= 0) return;
-  const MAX = 2000000000; // ~24 days
+  const MAX = 2000000000;
   setTimeout(async () => {
-    const title = "⏰ Karya — Do Now";
-    const body  = task.title;
-    const tag   = "karya-" + (task.id||"task");
+    // CRITICAL FIX: Only show reminder to users assigned to this task
+    if (S.user) {
+      const assignees = Array.isArray(task.assignedTo)
+        ? task.assignedTo
+        : [task.assignedTo || "Everyone"];
+      const mine = assignees.includes("Everyone") || assignees.includes(S.user.name);
+      if (!mine) {
+        console.log("[Karya] Skipping — not assigned to " + S.user.name);
+        return;
+      }
+    }
 
-    // Method 1: Service Worker notification (BEST — works minimized, persistent on Android+Windows)
-    let swShown = false;
+    const notifTitle = "Karya — Do Now";
+    const notifBody  = task.title;
+    const notifTag   = "karya-" + (task.id || "task");
+    let shown = false;
+
+    // Method 1: Service Worker (works when minimized)
     try {
       if (_swReg && "Notification" in window && Notification.permission === "granted") {
-        await _swReg.showNotification(title, {
-          body,
-          tag,
-          icon: "./karya-icon-192.png",
-          badge: "./karya-badge-96.png",
+        await _swReg.showNotification(notifTitle, {
+          body:               notifBody,
+          tag:                notifTag,
+          icon:               "./karya-icon-192.png",
+          badge:              "./karya-badge-96.png",
           requireInteraction: true,
           renotify:           true,
           vibrate:            [300,100,300,100,300],
           data:               { taskId: task.id||"", url: location.href }
         });
-        swShown = true;
-        console.log("[Karya] SW notification shown for:", body);
+        shown = true;
+        console.log("[Karya] SW notification sent for:", notifBody);
       }
-    } catch(e) { console.warn("[Karya] SW notification failed:", e); }
+    } catch(e) { console.warn("[Karya] SW notif failed:", e.message); }
 
-    // Method 2: Window Notification API fallback
-    if (!swShown && "Notification" in window && Notification.permission === "granted") {
+    // Method 2: Window Notification fallback
+    if (!shown && "Notification" in window && Notification.permission === "granted") {
       try {
-        new Notification(title, { body, tag, requireInteraction: true, icon: "./karya-icon-192.png" });
-        swShown = true;
+        new Notification(notifTitle, {
+          body: notifBody, tag: notifTag, requireInteraction: true
+        });
+        shown = true;
       } catch(e) {}
     }
 
-    // Method 3: Always show in-app big overlay (visible when app is open/focused)
-    showBigNotif(body, task.id||"");
+    // Method 3: Always show in-app popup (when app is open)
+    showBigNotif(notifBody, task.id || "");
 
   }, Math.min(delay, MAX));
 }
+
 
 // ── BIG NOTIFICATION (persistent, 40% screen) ────────────────────
 function playChime() {
@@ -1623,7 +1709,7 @@ function playChime() {
       o2.start(t); o2.stop(t+dur);
     }
     const now=ctx.currentTime;
-    bell(now+.05,880,1.6); bell(now+1.1,880,1.6); bell(now+2.15,880,1.6);
+    bell(now+.05,880,2.2); bell(now+2.1,880,2.2); bell(now+4.15,880,2.2);
   } catch(e){ console.warn("Chime:",e); }
 }
 
@@ -1633,19 +1719,21 @@ function showBigNotif(taskTitle, taskId) {
   const el=document.createElement("div");
   el.className="big-notif-overlay";
   const tid=taskId||"";
-  el.innerHTML=`<div class="big-notif-box">
-    <div class="big-notif-icon">🔔</div>
-    <div class="big-notif-donow">Do Now</div>
-    <div class="big-notif-task">${esc(taskTitle)}</div>
-    <div class="snooze-label">Reschedule</div>
-    <div class="snooze-row">
-      <button class="snooze-btn" onclick="window.snoozeTask('${tid}',30,this)">+30 min</button>
-      <button class="snooze-btn" onclick="window.snoozeTask('${tid}',60,this)">+1 hour</button>
-      <button class="snooze-btn" onclick="window.snoozeTask('${tid}',120,this)">+2 hours</button>
-      <button class="snooze-btn" onclick="window.snoozeTask('${tid}','tomorrow',this)">Tomorrow</button>
-    </div>
-    <button class="big-notif-close" onclick="this.closest('.big-notif-overlay').remove()">✓ Got it — on my way</button>
-  </div>`;
+  el.innerHTML = [
+    "<div class=\"big-notif-task-row\">",
+    "<span class=\"big-notif-icon\">🔔</span>",
+    "<span class=\"big-notif-task\">" + esc(taskTitle) + "</span>",
+    "</div>",
+    "<div class=\"big-notif-donow\">Karya — Do Now</div>",
+    "<div class=\"snooze-label\">Reschedule</div>",
+    "<div class=\"snooze-row\">",
+    "<button class=\"snooze-btn\" onclick=\"window.snoozeTask('" + tid + "',30,this)\">+30 min</button>",
+    "<button class=\"snooze-btn\" onclick=\"window.snoozeTask('" + tid + "',60,this)\">+1 hour</button>",
+    "<button class=\"snooze-btn\" onclick=\"window.snoozeTask('" + tid + "',120,this)\">+2 hours</button>",
+    "<button class=\"snooze-btn\" onclick=\"window.snoozeTask('" + tid + "','tomorrow',this)\">Tomorrow</button>",
+    "</div>",
+    "<button class=\"big-notif-close\" onclick=\"this.closest('.big-notif-overlay').remove()\">Got it — on my way</button>"
+  ].join("");
   document.body.appendChild(el);
   // PERSISTENT — no auto-dismiss
 }
