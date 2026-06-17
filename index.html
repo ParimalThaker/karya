@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="application-name" content="Karya">
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="/karya-icon-192.png">
 <title>Karya – Geetanjali</title>
 <style>
@@ -675,7 +675,11 @@ window.addEventListener("DOMContentLoaded", () => {
   S.theme = localStorage.getItem("k_theme") || "navy";
   loadTeam();
   checkSession();
-  if (isConfigured) initFirebase(); else loadLocal();
+  if (isConfigured) {
+    try { initFirebase(); } catch(e) { console.error("Firebase init failed:", e); loadLocal(); }
+  } else {
+    loadLocal();
+  }
 });
 
 function loadTeam() {
@@ -692,9 +696,10 @@ function checkSession() {
   if (ts && uid && (Date.now()-+ts)/3600000 < SESSION_HRS) {
     S.authed = true;
     S.user   = getMember(uid);
-    if (!S.user.id) { clearSession(); } // member removed
+    if (!S.user.id) { clearSession(); }
   } else clearSession();
-  render();
+  // Always render - even if Firebase not ready yet
+  try { render(); } catch(e) { console.error("Render error:", e); document.getElementById("app").innerHTML = "<div style='padding:40px;text-align:center;font-family:sans-serif'><h2>Loading Karya...</h2><p style='color:#666;margin-top:8px'>Please refresh if this persists</p></div>"; }
 }
 function clearSession() {
   ["k_sess_ts","k_sess_uid"].forEach(k=>localStorage.removeItem(k));
@@ -733,7 +738,7 @@ async function registerSW() {
   if (_swReg) return _swReg;
   if (!("serviceWorker" in navigator)) return null;
   try {
-    _swReg = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { scope: "/" });
+    _swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "/" });
     await navigator.serviceWorker.ready;
     console.log("[Karya] Service worker registered");
     return _swReg;
@@ -1567,8 +1572,8 @@ function _doSchedule(task, remindAt) {
         await _swReg.showNotification(title, {
           body,
           tag,
-          icon:               "/karya-icon-192.png",
-          badge:              "/karya-badge-96.png",
+          icon: "./karya-icon-192.png",
+          badge: "./karya-badge-96.png",
           requireInteraction: true,
           renotify:           true,
           vibrate:            [300,100,300,100,300],
@@ -1582,7 +1587,7 @@ function _doSchedule(task, remindAt) {
     // Method 2: Window Notification API fallback
     if (!swShown && "Notification" in window && Notification.permission === "granted") {
       try {
-        new Notification(title, { body, tag, requireInteraction: true, icon: "/karya-icon-192.png" });
+        new Notification(title, { body, tag, requireInteraction: true, icon: "./karya-icon-192.png" });
         swShown = true;
       } catch(e) {}
     }

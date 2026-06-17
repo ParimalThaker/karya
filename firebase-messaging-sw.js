@@ -11,12 +11,12 @@ importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-com
 
 // ▼▼▼ PASTE YOUR FIREBASE CONFIG HERE (same as in karya.html) ▼▼▼
 firebase.initializeApp({
-  apiKey:            "PASTE_YOUR_API_KEY",
-  authDomain:        "PASTE_YOUR_AUTH_DOMAIN",
-  projectId:         "PASTE_YOUR_PROJECT_ID",
-  storageBucket:     "PASTE_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID",
-  appId:             "PASTE_YOUR_APP_ID"
+  apiKey:            "AIzaSyBgnUI_Fv9VLXvNAWdR_KxidZPajfd7s4E",
+  authDomain:        "karya-7.firebaseapp.com",
+  projectId:         "karya-7",
+  storageBucket:     "karya-7.firebasestorage.app",
+  messagingSenderId: "187526342338",
+  appId:             "1:187526342338:web:f300bbca2c6a6103cc3d5b"
 });
 // ▲▲▲ END CONFIG ▲▲▲
 
@@ -36,8 +36,8 @@ messaging.onBackgroundMessage(function(payload) {
 
   self.registration.showNotification(title, {
     body:               body,
-    icon:               "/karya-icon-192.png",
-    badge:              "/karya-badge-96.png",
+    icon: "./karya-icon-192.png",
+    badge: "./karya-badge-96.png",
     tag:                "karya-" + taskId,        // Replaces previous, no stacking
     renotify:           true,                      // Re-rings even if same tag
     requireInteraction: true,                      // Stays until user taps — PERSISTENT
