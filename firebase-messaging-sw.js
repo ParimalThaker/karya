@@ -57,20 +57,21 @@ self.addEventListener("notificationclick", function(event) {
 
   if (event.action === "dismiss") return;
 
-  const taskId  = event.notification.data?.taskId || "";
-  const baseUrl = event.notification.data?.url || "/karya.html";
-  const url     = taskId ? baseUrl + "?task=" + taskId : baseUrl;
+  const taskId = event.notification.data?.taskId || "";
+  const appUrl = "https://parimalthaker.github.io/karya/";
+  const url    = taskId ? appUrl + "?remind=" + taskId : appUrl;
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true })
       .then(function(clientList) {
-        // Focus existing Karya tab if open
+        // If Karya is open anywhere, focus and pass task ID
         for (const client of clientList) {
-          if (client.url.includes("karya") && "focus" in client) {
+          if (client.url.includes("parimalthaker.github.io/karya")) {
+            client.postMessage({ type: "SHOW_REMINDER", taskId: taskId });
             return client.focus();
           }
         }
-        // Otherwise open new tab
+        // Open fresh
         if (clients.openWindow) return clients.openWindow(url);
       })
   );
