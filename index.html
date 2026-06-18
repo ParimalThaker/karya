@@ -73,7 +73,7 @@ a{color:var(--acc)}
 .prio-sel{border:1.5px solid var(--bdr);border-radius:8px;padding:5px 9px;font-size:12px;background:var(--bg);color:var(--txt)}
 
 /* TASK LIST */
-.task-list{-webkit-box-flex:1;-ms-flex:1;flex:1;padding:10px 12px 270px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:8px}
+.task-list{-webkit-box-flex:1;-ms-flex:1;flex:1;padding:10px 12px 310px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:8px}
 
 /* TASK CARD */
 .task-card{background:var(--card);border-radius:var(--r);padding:12px 10px 12px 12px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start;gap:9px;box-shadow:var(--sh);border-left:3px solid transparent;-webkit-transition:opacity .2s;transition:opacity .2s}
@@ -103,21 +103,21 @@ a{color:var(--acc)}
 .empty-icon{font-size:42px;margin-bottom:12px}
 
 /* ACHIEVEMENT STRIP */
-.achieve-wrap{background:var(--nav2);position:fixed;bottom:48px;left:0;right:0;z-index:80;overflow:hidden}
+.achieve-wrap{background:var(--nav2);position:fixed;bottom:48px;left:0;right:0;z-index:80;overflow:hidden;min-height:58px}
 .team-prog-row{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:8px;padding:5px 12px 3px}
-.team-prog-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);white-space:nowrap}
+.team-prog-lbl{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.45);white-space:nowrap}
 .team-prog-bar-bg{-webkit-box-flex:1;-ms-flex:1;flex:1;height:6px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden}
 .team-prog-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#00C896,#4F7EFF);-webkit-transition:width .6s ease;transition:width .6s ease}
-.team-prog-val{font-size:10px;color:rgba(255,255,255,.55);white-space:nowrap}
-.team-milestone{font-size:10px;color:#FFD700;white-space:nowrap;font-weight:700}
+.team-prog-val{font-size:14px;color:rgba(255,255,255,.55);white-space:nowrap}
+.team-milestone{font-size:13px;color:#FFD700;white-space:nowrap;font-weight:700}
 .achieve-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:3px 12px 6px}
 .achieve-scroll::-webkit-scrollbar{display:none}
 .achieve-inner{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:10px;min-width:-webkit-max-content;min-width:-moz-max-content;min-width:max-content}
-.achieve-hd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);white-space:nowrap}
-.achieve-entry{display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:4px;font-size:11px;color:#fff;white-space:nowrap}
+.achieve-hd{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);white-space:nowrap}
+.achieve-entry{display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:5px;font-size:16px;color:#fff;white-space:nowrap}
 .ach-dot{width:7px;height:7px;border-radius:50%;display:inline-block;-ms-flex-negative:0;flex-shrink:0}
-.ach-pct{font-weight:800;font-size:12px}
-.ach-cnt{font-size:10px;color:rgba(255,255,255,.5)}
+.ach-pct{font-weight:800;font-size:17px}
+.ach-cnt{font-size:14px;color:rgba(255,255,255,.5)}
 .ach-sep{color:rgba(255,255,255,.2);font-size:10px}
 
 /* TEAM STRIP */
@@ -186,13 +186,16 @@ a{color:var(--acc)}
 .img-drop:hover{background:var(--bg)}
 
 /* BIG NOTIFICATION — persistent, 40% screen */
-.big-notif-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.78);z-index:9998;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:16px;-webkit-animation:fadeIn .25s ease;animation:fadeIn .25s ease}
-.big-notif-box{background:#fff;border-radius:22px;padding:28px 22px 22px;width:100%;max-width:440px;min-height:44vh;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.45);-webkit-animation:popIn .3s ease;animation:popIn .3s ease;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;gap:10px}
-.big-notif-task-row{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;gap:12px;width:100%}
-.big-notif-icon{font-size:40px;-ms-flex-negative:0;flex-shrink:0}
-.big-notif-task{font-size:32px;font-weight:700;color:#1A1F2E;line-height:1.2;word-break:break-word;text-align:left}
-.big-notif-donow{font-size:13px;font-weight:400;color:#888;letter-spacing:.02em}
-.snooze-label{font-size:11px;color:#6B7280;font-weight:500}
+.big-notif-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:9998;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:20px;-webkit-animation:fadeIn .25s ease;animation:fadeIn .25s ease}
+.big-notif-box{background:#fff;border-radius:22px;padding:28px 24px 22px;width:100%;max-width:460px;min-height:42vh;box-shadow:0 16px 56px rgba(0,0,0,.5);-webkit-animation:popIn .3s ease;animation:popIn .3s ease;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:16px}
+.bni-header{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:flex-start;-ms-flex-align:flex-start;align-items:flex-start;gap:14px}
+.bni-bell{font-size:38px;-ms-flex-negative:0;flex-shrink:0;margin-top:2px}
+.bni-title-wrap{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:5px;-webkit-box-flex:1;-ms-flex:1;flex:1}
+.bni-task{font-size:26px;font-weight:700;color:#1A1F2E;line-height:1.25;word-break:break-word}
+.bni-donow{font-size:12px;font-weight:400;color:#999;letter-spacing:.03em}
+.bni-snooze-lbl{font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.08em;text-align:center}
+.bni-snooze-row{display:-webkit-box;display:-ms-flexbox;display:flex;gap:8px;-ms-flex-wrap:wrap;flex-wrap:wrap}
+
 .snooze-row{display:-webkit-box;display:-ms-flexbox;display:flex;gap:7px;width:100%;-ms-flex-wrap:wrap;flex-wrap:wrap;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center}
 .snooze-btn{-webkit-box-flex:1;-ms-flex:1;flex:1;min-width:90px;background:#F0F3FA;border:1.5px solid #E5E9F0;border-radius:10px;padding:9px 6px;font-size:12px;font-weight:600;color:#1B2B4B;cursor:pointer;border-style:solid}
 .snooze-btn:hover,.snooze-btn:active{background:#1B2B4B;color:#fff;border-color:#1B2B4B}
@@ -474,6 +477,11 @@ body.glass-theme .assign-chip {
   color: #D4C8FF !important;
   border-color: rgba(255,255,255,0.15) !important;
 }
+body.glass-theme .assign-chip.sel-chip {
+  color: #fff !important;
+  border-color: transparent !important;
+  opacity: 1 !important;
+}
 
 /* Notification items */
 body.glass-theme .overdue-item {
@@ -622,9 +630,27 @@ body.glass-theme .img-drop {
 
 /* TIME PICKER */
 .tpick{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:4px}
-.tp-sel{-webkit-box-flex:1;-ms-flex:1;flex:1;padding:10px 4px!important;text-align:center;min-width:0}
+.tp-sel{-webkit-box-flex:1;-ms-flex:1;flex:1;padding:10px 4px!important;text-align:center;min-width:0;cursor:pointer}
 .tp-ap{-webkit-box-flex:1.3;-ms-flex:1.3;flex:1.3}
 .tp-col{font-size:18px;font-weight:700;color:var(--txt);padding:0 1px;-ms-flex-negative:0;flex-shrink:0}
+
+
+/* WINNER CELEBRATION */
+.winner-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:9995;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:20px;-webkit-animation:fadeIn .4s ease;animation:fadeIn .4s ease}
+.winner-box{background:linear-gradient(135deg,#1B2B4B 0%,#2A4080 100%);border-radius:24px;padding:36px 28px;width:100%;max-width:460px;min-height:70vh;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;gap:12px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);-webkit-animation:popIn .5s cubic-bezier(.34,1.56,.64,1);animation:popIn .5s cubic-bezier(.34,1.56,.64,1)}
+.winner-stars{font-size:40px;-webkit-animation:spin-slow 4s linear infinite;animation:spin-slow 4s linear infinite}
+.winner-trophy{font-size:80px;margin:8px 0;-webkit-animation:trophy-bounce 1s ease infinite alternate;animation:trophy-bounce 1s ease infinite alternate}
+.winner-name{font-size:32px;font-weight:800;color:#FFD700;letter-spacing:-.5px}
+.winner-pct{font-size:18px;font-weight:600;color:rgba(255,255,255,.8);background:rgba(255,255,255,.1);padding:6px 20px;border-radius:99px;margin:4px 0}
+.winner-msg1{font-size:22px;font-weight:700;color:#fff;margin-top:4px}
+.winner-msg2{font-size:16px;color:rgba(255,255,255,.65);line-height:1.5}
+.winner-close{margin-top:16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:12px;padding:12px 32px;font-size:15px;font-weight:600;cursor:pointer;-webkit-transition:all .2s;transition:all .2s}
+.winner-close:hover{background:rgba(255,255,255,.25)}
+.winner-fireworks{font-size:28px;display:-webkit-box;display:-ms-flexbox;display:flex;gap:12px;-ms-flex-wrap:wrap;flex-wrap:wrap;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;-webkit-animation:fadeIn 1s ease .5s both;animation:fadeIn 1s ease .5s both}
+@-webkit-keyframes spin-slow{from{-webkit-transform:rotate(0deg);transform:rotate(0deg)}to{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}
+@keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@-webkit-keyframes trophy-bounce{from{-webkit-transform:translateY(0) scale(1);transform:translateY(0) scale(1)}to{-webkit-transform:translateY(-12px) scale(1.08);transform:translateY(-12px) scale(1.08)}}
+@keyframes trophy-bounce{from{transform:translateY(0) scale(1)}to{transform:translateY(-12px) scale(1.08)}}
 
 </style>
 </head>
@@ -1060,6 +1086,7 @@ function buildMain() {
       <button class="stat-btn ${S.view==="mydone"?"active":""}"   onclick="window.setView('mydone')">  <span class="s-num" id="sn-mydone">0</span><span class="s-lbl">My Done</span></button>
       <div class="s-div"></div>
       <button class="stat-btn ${S.view==="teamdone"?"active":""}" onclick="window.setView('teamdone')"><span class="s-num" id="sn-tdone">0</span><span class="s-lbl">Team Done</span></button>
+      ${u.isAdmin ? "<div class=\"s-div\"></div><button class=\"stat-btn " + (S.view==="private"?"active":"") + "\" onclick=\"window.setView('private')\"><span class=\"s-num\" id=\"sn-priv\">0</span><span class=\"s-lbl\">🔒 Private</span></button>" : ""}
     </div>
     <div class="filter-bar">
       <span class="f-label">Filter:</span>
@@ -1093,10 +1120,17 @@ function renderTaskArea() {
   const el = document.getElementById("task-list"); if (!el) return;
   const u  = S.user; if (!u) return;
   let tasks = [...S.tasks];
-  if (S.view==="mine")     tasks=tasks.filter(t=>t.status!=="completed"&&isAssigned(t,u));
-  if (S.view==="team")     tasks=tasks.filter(t=>t.status!=="completed");
-  if (S.view==="mydone")   tasks=tasks.filter(t=>t.status==="completed"&&isAssigned(t,u));
-  if (S.view==="teamdone") tasks=tasks.filter(t=>t.status==="completed");
+  // Private tasks: admin-only, invisible to all others
+  if (S.view==="private") {
+    tasks = tasks.filter(t=>t.isPrivate && t.createdBy===u.name);
+  } else {
+    // Hide private tasks from ALL normal views
+    tasks = tasks.filter(t=>!t.isPrivate);
+    if (S.view==="mine")     tasks=tasks.filter(t=>t.status!=="completed"&&isAssigned(t,u));
+    if (S.view==="team")     tasks=tasks.filter(t=>t.status!=="completed");
+    if (S.view==="mydone")   tasks=tasks.filter(t=>t.status==="completed"&&isAssigned(t,u));
+    if (S.view==="teamdone") tasks=tasks.filter(t=>t.status==="completed");
+  }
   if (S.filter!=="all")    tasks=tasks.filter(t=>t.priority===S.filter);
   tasks.sort((a,b)=>{
     if(a.isFuture&&!b.isFuture) return 1;
@@ -1132,7 +1166,7 @@ function buildCard(t) {
     <div class="task-body" onclick="window.showDetail('${t.id}')">
       <div class="task-title ${t.status==="completed"?"strike":""}">${esc(t.title)}</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">
-        ${t.isFuture?`<span class="future-tag">🔄 Future</span>`:""}
+        ${t.isFuture?'<span class="future-tag">🔄 Future</span>':""} ${t.isPrivate?'<span class="future-tag" style="background:#FDF2F8;color:#BE185D;border:1px solid #F9A8D4">🔒 Private</span>':""}
         ${t.snoozed&&t.status!=="completed"?`<span class="future-tag snooze-badge" onclick="event.stopPropagation();window.showSnoozeLog('${t.id}')">⏸ Snoozed${snoozeCnt>1?" "+snoozeCnt+"×":""}</span>`:""}
       </div>
       <div class="assignees-row">${pills}</div>
@@ -1148,10 +1182,13 @@ function buildCard(t) {
 function updateStats() {
   const u=S.user; if(!u) return;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  set("sn-mine",  S.tasks.filter(t=>t.status!=="completed"&&isAssigned(t,u)).length);
-  set("sn-team",  S.tasks.filter(t=>t.status!=="completed").length);
-  set("sn-mydone",S.tasks.filter(t=>t.status==="completed"&&isAssigned(t,u)).length);
-  set("sn-tdone", S.tasks.filter(t=>t.status==="completed").length);
+  const pubTasks = S.tasks.filter(t=>!t.isPrivate);
+  const privTasks = S.tasks.filter(t=>t.isPrivate && t.createdBy===u.name);
+  set("sn-mine",  pubTasks.filter(t=>t.status!=="completed"&&isAssigned(t,u)).length);
+  set("sn-team",  pubTasks.filter(t=>t.status!=="completed").length);
+  set("sn-mydone",pubTasks.filter(t=>t.status==="completed"&&isAssigned(t,u)).length);
+  set("sn-tdone", pubTasks.filter(t=>t.status==="completed").length);
+  set("sn-priv",  privTasks.filter(t=>t.status!=="completed").length);
   renderAchievements();
 }
 
@@ -1228,6 +1265,7 @@ window.showCreate = function() {
           <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:10px;cursor:pointer">
             <input type="checkbox" id="ct-future"> <span style="font-size:13px">🔄 Rolls over</span>
           </label>
+          ${S.user&&S.user.isAdmin ? "<label style=\"display:flex;align-items:center;gap:6px;padding:10px 12px;background:#FFF0F8;border:1.5px solid #F9A8D4;border-radius:10px;cursor:pointer;margin-top:6px\"><input type=\"checkbox\" id=\"ct-private\"> <span style=\"font-size:13px\">🔒 Private (only visible to you)</span></label>" : ""}
         </div>
       </div>
       <div class="field-row">
@@ -1313,6 +1351,7 @@ window.createTask = async function() {
     dueDate, dueTime,
     reminder:document.getElementById("ct-remind")?.value||"ontime",
     isFuture:document.getElementById("ct-future")?.checked||false,
+    isPrivate:S.user?.isAdmin&&document.getElementById("ct-private")?.checked||false,
     status:"pending", createdBy:S.user.name,
     createdAt:new Date().toISOString(),
     image:window._img||null
@@ -1339,7 +1378,7 @@ window.toggleTask = async function(id) {
     t.status=ns; saveLocal(); renderTaskArea(); updateStats();
   }
   await addLog(ns==="completed"?"complete":"reopen",`"${t.title}"`);
-  if (ns==="completed"){ closeModal(); showConfetti(); showToast("🎉 Task completed!"); }
+  if (ns==="completed"){ closeModal(); showConfetti(); showToast("🎉 Task completed!"); setTimeout(checkWinnerCelebration, 1200); }
   else showToast("Task reopened");
 };
 
@@ -1716,27 +1755,35 @@ function playChime() {
 function showBigNotif(taskTitle, taskId) {
   document.querySelectorAll(".big-notif-overlay").forEach(e=>e.remove());
   playChime();
-  const el=document.createElement("div");
-  el.className="big-notif-overlay";
-  const tid=taskId||"";
-  el.innerHTML = [
-    "<div class=\"big-notif-task-row\">",
-    "<span class=\"big-notif-icon\">🔔</span>",
-    "<span class=\"big-notif-task\">" + esc(taskTitle) + "</span>",
-    "</div>",
-    "<div class=\"big-notif-donow\">Karya — Do Now</div>",
-    "<div class=\"snooze-label\">Reschedule</div>",
-    "<div class=\"snooze-row\">",
-    "<button class=\"snooze-btn\" onclick=\"window.snoozeTask('" + tid + "',30,this)\">+30 min</button>",
-    "<button class=\"snooze-btn\" onclick=\"window.snoozeTask('" + tid + "',60,this)\">+1 hour</button>",
-    "<button class=\"snooze-btn\" onclick=\"window.snoozeTask('" + tid + "',120,this)\">+2 hours</button>",
-    "<button class=\"snooze-btn\" onclick=\"window.snoozeTask('" + tid + "','tomorrow',this)\">Tomorrow</button>",
-    "</div>",
-    "<button class=\"big-notif-close\" onclick=\"this.closest('.big-notif-overlay').remove()\">Got it — on my way</button>"
-  ].join("");
+  const el = document.createElement("div");
+  el.className = "big-notif-overlay";
+  const tid = taskId || "";
+  const rows = [
+    "<div class='big-notif-box'>",
+    "  <div class='bni-header'>",
+    "    <span class='bni-bell'>🔔</span>",
+    "    <div class='bni-title-wrap'>",
+    "      <div class='bni-task'>" + esc(taskTitle) + "</div>",
+    "      <div class='bni-donow'>Karya \u2014 Do Now</div>",
+    "    </div>",
+    "  </div>",
+    "  <div class='bni-snooze-lbl'>Reschedule</div>",
+    "  <div class='bni-snooze-row'>",
+    "    <button class='snooze-btn' onclick='window.snoozeTask(\"" + tid + "\",30,this)'>+30 min</button>",
+    "    <button class='snooze-btn' onclick='window.snoozeTask(\"" + tid + "\",60,this)'>+1 hr</button>",
+    "    <button class='snooze-btn' onclick='window.snoozeTask(\"" + tid + "\",120,this)'>+2 hrs</button>",
+    "    <button class='snooze-btn' onclick='window.snoozeTask(\"" + tid + "\",\"tomorrow\",this)'>Tomorrow</button>",
+    "  </div>",
+    "  <button class='big-notif-close' onclick='this.closest(\".big-notif-overlay\").remove()'>",
+    "    \u2713 Got it \u2014 on my way",
+    "  </button>",
+    "</div>"
+  ];
+  el.innerHTML = rows.join("\n");
   document.body.appendChild(el);
-  // PERSISTENT — no auto-dismiss
+  // PERSISTENT — no auto dismiss
 }
+
 
 window.snoozeTask = async function(id, mins, btn) {
   if (!id) { btn.closest(".big-notif-overlay").remove(); return; }
@@ -1831,6 +1878,75 @@ window.showSetupGuide = function() {
       ${[["1","Go to <a href='https://console.firebase.google.com' target='_blank'>console.firebase.google.com</a>"],["2","Add project → name it Karya-Geetanjali"],["3","Click the Web (&lt;/&gt;) icon → Register app"],["4","Copy the firebaseConfig and paste into karya.html"],["5","Firestore Database → Create database → Test mode"],["6","Project Settings → Cloud Messaging → Generate VAPID key → paste into karya.html"],["7","See SETUP-GUIDE.md for Cloud Functions and GitHub Pages setup"]].map(([n,t])=>`<div style="display:flex;gap:10px;margin-bottom:10px"><span style="width:22px;height:22px;border-radius:50%;background:var(--nav);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${n}</span><div style="font-size:13px;line-height:1.6">${t}</div></div>`).join("")}
     </div>`);
 };
+
+
+// ── WINNER CELEBRATION (90% achievement) ─────────────────────────
+function playWinnerChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    function note(t, freq, dur, vol) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = "sine"; o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol || 0.35, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.start(t); o.stop(t + dur);
+    }
+    const n = ctx.currentTime;
+    // Ascending victory fanfare
+    note(n+.0,  523, .18);  // C
+    note(n+.15, 659, .18);  // E
+    note(n+.30, 784, .18);  // G
+    note(n+.45, 1047,.35);  // High C
+    note(n+.80, 784, .15);
+    note(n+.95, 1047,.15);
+    note(n+1.1, 1319,.5, .45); // High E — held
+  } catch(e) {}
+}
+
+let _winnerShownFor = {}; // prevent repeated celebrations
+
+function checkWinnerCelebration() {
+  const team = getTeam();
+  team.forEach(m => {
+    const assigned = S.tasks.filter(t =>
+      (Array.isArray(t.assignedTo) ? t.assignedTo : [t.assignedTo]).includes(m.name)
+    );
+    if (assigned.length < 3) return; // need at least 3 tasks to qualify
+    const done = assigned.filter(t => t.status === "completed");
+    const pct  = Math.round(done.length / assigned.length * 100);
+    const key  = m.id + "_" + done.length;
+    if (pct >= 90 && !_winnerShownFor[key]) {
+      _winnerShownFor[key] = true;
+      setTimeout(() => showWinnerCelebration(m, pct, done.length, assigned.length), 800);
+    }
+  });
+}
+
+function showWinnerCelebration(member, pct, done, total) {
+  playWinnerChime();
+  const el = document.createElement("div");
+  el.className = "winner-overlay";
+  el.innerHTML = [
+    "<div class='winner-box'>",
+    "  <div class='winner-fireworks'>🎆 🎇 ✨ 🎆 🎇</div>",
+    "  <div class='winner-stars'>⭐</div>",
+    "  <div class='winner-trophy'>🏆</div>",
+    "  <div class='winner-name'>" + esc(member.name) + "</div>",
+    "  <div class='winner-pct'>" + pct + "% Complete (" + done + "/" + total + " tasks)</div>",
+    "  <div class='winner-msg1'>Congratulations!</div>",
+    "  <div class='winner-msg2'>Outstanding work completing " + pct + "% of your tasks!<br>You did great — keep it up! 🌟</div>",
+    "  <div class='winner-fireworks' style='margin-top:8px'>🥇 🎉 🌟 🎉 🥇</div>",
+    "  <button class='winner-close' onclick='this.closest(\".winner-overlay\").remove()'>",
+    "    Thank you! \uD83D\uDE4C",
+    "  </button>",
+    "</div>"
+  ].join("");
+  document.body.appendChild(el);
+  // Auto close after 15 seconds
+  setTimeout(() => { if (el.parentElement) el.remove(); }, 15000);
+}
 
 // ── CONFETTI ─────────────────────────────────────────────────────
 function showConfetti() {
