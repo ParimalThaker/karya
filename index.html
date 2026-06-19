@@ -726,6 +726,8 @@ function to24(h,m,ap) {
   if (ap==="AM" && hour===12) hour=0;
   return String(hour).padStart(2,"0")+":"+String(m).padStart(2,"0");
 }
+window.to12 = to12;
+window.to24 = to24;
 window.syncTime = function(id) {
   var h  = document.getElementById(id+"-h");
   var m  = document.getElementById(id+"-m");
@@ -848,7 +850,7 @@ async function registerSW() {
   if (_swReg) return _swReg;
   if (!("serviceWorker" in navigator)) return null;
   try {
-    _swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "/" });
+    _swReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" });
     await navigator.serviceWorker.ready;
     console.log("[Karya] Service worker registered");
     return _swReg;
