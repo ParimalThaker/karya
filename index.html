@@ -1390,8 +1390,17 @@ window.createTask = async function() {
   };
   window._img=null;
   if (S.fbReady&&db) {
-    const ref = await addDoc(collection(db,"karya_tasks"),{...task,createdAt:serverTimestamp()});
-    task.id = ref.id;
+    try {
+      const ref = await addDoc(collection(db,"karya_tasks"),{...task,createdAt:serverTimestamp()});
+      task.id = ref.id;
+    } catch(fireErr) {
+      console.error("Firestore write failed:", fireErr);
+      // Fallback to local if Firebase fails
+      task.id="t"+Date.now(); S.tasks.unshift(task); saveLocal(); renderTaskArea(); updateStats();
+      showToast("⚠️ Saved locally — check Firebase rules");
+      scheduleReminder(task);
+      return;
+    }
   } else {
     task.id="t"+Date.now(); S.tasks.unshift(task); saveLocal(); renderTaskArea(); updateStats();
   }
@@ -1512,8 +1521,10 @@ window.saveEdit = async function(id) {
     image:window._clearImg?null:(t?.image||null)
   };
   window._clearImg=false;
-  if (S.fbReady&&db) { await updateDoc(doc(db,"karya_tasks",id),upd); }
-  else { const i=S.tasks.findIndex(x=>x.id===id); if(i>-1) S.tasks[i]={...S.tasks[i],...upd}; saveLocal(); renderTaskArea(); updateStats(); }
+  if (S.fbReady&&db) {
+    try { await updateDoc(doc(db,"karya_tasks",id),upd); }
+    catch(e) { console.error("Update failed:",e); const i=S.tasks.findIndex(x=>x.id===id); if(i>-1) S.tasks[i]={...S.tasks[i],...upd}; saveLocal(); renderTaskArea(); updateStats(); showToast("⚠️ Saved locally — check Firebase rules"); return; }
+  } else { const i=S.tasks.findIndex(x=>x.id===id); if(i>-1) S.tasks[i]={...S.tasks[i],...upd}; saveLocal(); renderTaskArea(); updateStats(); }
   scheduleReminder({...t,...upd,id});
   await addLog("edit",`"${title}"`);
   closeModal(); showToast("Task updated ✓");
