@@ -702,7 +702,7 @@ const THEMES = {
 let db, messaging;
 const S = {
   authed:false, user:null, tasks:[], logs:[],
-  view:"mine", filter:"all", memberFilter:"all", theme:"navy",
+  view:"mine", filter:"all", memberFilter:"all", memberFilterList:[], theme:"navy",
   team:[], fbReady:false
 };
 
@@ -1000,7 +1000,7 @@ function applyTheme() {
 
 // ── GEETANJALI LOGO BLOCK ─────────────────────────────────────────
 function logoBlock(height) {
-  return `<div style="height:${height}px;background:linear-gradient(135deg,#E8720C,#FF9A00);border-radius:${Math.round(height*.18)}px;display:inline-flex;align-items:center;justify-content:center;padding:0 ${Math.round(height*.3)}px;font-weight:900;font-size:${Math.round(height*.28)}px;color:#fff;letter-spacing:-.5px;box-shadow:0 3px 12px rgba(232,114,12,.35)">गीतांजलि</div>`;
+  return `<img src="./karya-icon-192.png" alt="Karya" style="height:${height}px;width:${height}px;border-radius:${Math.round(height*.22)}px;object-fit:cover;box-shadow:0 3px 12px rgba(0,0,30,.35)">`;
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────────
@@ -1125,7 +1125,7 @@ function buildMain() {
         <option value="medium">🟡 Medium</option>
         <option value="low">🟢 Low</option>
       </select>
-      ${S.view==="team"||S.view==="teamdone" ? "<select class=\"prio-sel\" id=\"member-filter\" onchange=\"S.memberFilter=this.value;renderTaskArea()\" style=\"max-width:130px\"><option value=\"all\">👥 All Members</option>" + getTeam().map(m=>"<option value=\""+m.name+"\">"+m.name.split(" ")[0]+"</option>").join("") + "</select>" : ""}
+      ${(S.view==="team"||S.view==="teamdone") ? "<button class=\"prio-sel\" id=\"member-filter-btn\" onclick=\"window.showMemberFilterPicker()\" style=\"cursor:pointer;white-space:nowrap\">👥 " + (S.memberFilterList&&S.memberFilterList.length ? S.memberFilterList.length+" Selected" : "All Members") + "</button>" : ""}
     </div>
     <div class="task-list" id="task-list"></div>
     <div class="achieve-wrap" id="achieve-wrap">
@@ -1162,9 +1162,12 @@ function renderTaskArea() {
     if (S.view==="teamdone") tasks=tasks.filter(t=>t.status==="completed");
   }
   if (S.filter!=="all")    tasks=tasks.filter(t=>t.priority===S.filter);
-  if (S.memberFilter && S.memberFilter!=="all" && (S.view==="team"||S.view==="teamdone")) {
-    tasks=tasks.filter(t=>(Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo]).includes(S.memberFilter)||
-      (Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo]).includes("Everyone"));
+  if (S.memberFilterList && S.memberFilterList.length && (S.view==="team"||S.view==="teamdone")) {
+    tasks=tasks.filter(t=>{
+      const names = Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo];
+      if (names.includes("Everyone")) return true;
+      return S.memberFilterList.some(mf => names.includes(mf));
+    });
   }
   tasks.sort((a,b)=>{
     if(a.isFuture&&!b.isFuture) return 1;
@@ -1670,6 +1673,52 @@ window.removeMember = function(id) {
 
 // ── SWITCH USER ───────────────────────────────────────────────────
 window.switchUser = function() { S.user=null; clearSession(); render(); };
+
+
+// ── MEMBER FILTER PICKER (multi-select) ──────────────────────────
+window.showMemberFilterPicker = function() {
+  const team = getTeam();
+  const selected = S.memberFilterList || [];
+  openModal([
+    "<div class='modal-hdr'><h2>\uD83D\uDC65 Filter by Member</h2><button class='modal-x' onclick='closeModal()'>\u2715</button></div>",
+    "<div class='modal-body'>",
+    "<div class='assign-grid' id='member-filter-grid'>",
+    team.map(m => {
+      const sel = selected.includes(m.name);
+      return "<span class='assign-chip" + (sel?" sel-chip":"") + "' data-name='" + m.name + "' data-color='" + m.color + "' onclick='window.toggleMemberFilterChip(this)' style='border-color:" + m.color + ";" + (sel?("background:"+m.color+";color:#fff"):"") + "'><span class='chip-dot' style='background:" + m.color + "'></span>" + m.name.split(" ")[0] + "</span>";
+    }).join(""),
+    "</div>",
+    "</div>",
+    "<div class='modal-foot'>",
+    "<button class='btn-secondary' onclick='window.clearMemberFilter()'>Clear All</button>",
+    "<button class='btn-primary' onclick='window.applyMemberFilter()'>Apply Filter</button>",
+    "</div>"
+  ].join(""));
+};
+
+window.toggleMemberFilterChip = function(el) {
+  el.classList.toggle("sel-chip");
+  if (el.classList.contains("sel-chip")) {
+    el.style.background = el.dataset.color;
+    el.style.color = "#fff";
+  } else {
+    el.style.background = "";
+    el.style.color = "";
+  }
+};
+
+window.clearMemberFilter = function() {
+  S.memberFilterList = [];
+  closeModal();
+  renderTaskArea(); updateStats();
+};
+
+window.applyMemberFilter = function() {
+  const chips = document.querySelectorAll("#member-filter-grid .assign-chip.sel-chip");
+  S.memberFilterList = Array.from(chips).map(c => c.dataset.name);
+  closeModal();
+  renderTaskArea(); updateStats();
+};
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────
 window.showNotifs = function() {

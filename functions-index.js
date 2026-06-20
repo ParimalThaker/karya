@@ -1,5 +1,5 @@
-// functions/index.js — Karya App v2
-// Fixed for firebase-functions v4+ (pubsub.schedule syntax changed)
+// functions/index.js — Karya App v3
+// Fixed: removed invalid bodyLocKey field that was breaking Android delivery
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
@@ -18,10 +18,11 @@ exports.sendKaryaReminders = onSchedule({
   const now   = new Date();
   const tasks = await db.collection("karya_tasks").get();
 
+  console.log(`[Karya] Checking ${tasks.size} tasks at ${now.toISOString()}`);
+
   for (const taskDoc of tasks.docs) {
     const task = taskDoc.data();
 
-    // Skip completed, future, no due date, or admin-private tasks
     if (task.status === "completed" || task.isFuture || !task.dueDate) continue;
     if (!task.reminder || task.reminder === "") continue;
 
@@ -35,7 +36,6 @@ exports.sendKaryaReminders = onSchedule({
     const diff = remindAt.getTime() - now.getTime();
     if (diff < 0 || diff > 60000) continue;
 
-    // Prevent duplicate sends
     if (task.notifiedAt) {
       const last = task.notifiedAt.toDate ? task.notifiedAt.toDate() : new Date(task.notifiedAt);
       if (Math.abs(last.getTime() - remindAt.getTime()) < 90000) continue;
@@ -44,7 +44,6 @@ exports.sendKaryaReminders = onSchedule({
     const assignees = Array.isArray(task.assignedTo)
       ? task.assignedTo : [task.assignedTo || "Everyone"];
 
-    // Get matching FCM tokens
     const tokensSnap = await db.collection("karya_fcm_tokens").get();
     const tokens = [];
     tokensSnap.forEach(d => {
@@ -54,25 +53,34 @@ exports.sendKaryaReminders = onSchedule({
       if (match) tokens.push({ token: td.token, docId: d.id });
     });
 
-    if (!tokens.length) continue;
+    if (!tokens.length) {
+      console.log(`[Karya] No tokens found for task "${task.title}" assignees: ${assignees.join(",")}`);
+      continue;
+    }
 
+    console.log(`[Karya] Sending "${task.title}" to ${tokens.length} token(s)`);
+
+    // FIXED: removed bodyLocKey (was an invalid field causing silent failures)
     const message = {
-      notification: { title: "Karya \u2014 Do Now", body: task.title },
-      data: { taskId: taskDoc.id, title: task.title },
+      notification: {
+        title: "Karya \u2014 Do Now",
+        body: task.title
+      },
+      data: {
+        taskId: taskDoc.id,
+        title: task.title
+      },
       tokens: tokens.map(t => t.token),
       android: {
         priority: "high",
         notification: {
           channelId: "karya_reminders",
-          channelDescription: "Karya task reminders",
           priority: "max",
           defaultSound: true,
           defaultVibrateTimings: true,
           visibility: "PUBLIC",
           sticky: true,
-          color: "#E8720C",
-          clickAction: "https://parimalthaker.github.io/karya/",
-          bodyLocKey: task.title,
+          color: "#E8720C"
         }
       },
       webpush: {
@@ -96,21 +104,24 @@ exports.sendKaryaReminders = onSchedule({
 
     try {
       const resp = await getMessaging().sendEachForMulticast(message);
-      console.log(`Sent "${task.title}": ${resp.successCount} ok, ${resp.failureCount} failed`);
+      console.log(`[Karya] Result for "${task.title}": ${resp.successCount} sent, ${resp.failureCount} failed`);
 
-      // Clean invalid tokens
       resp.responses.forEach((r, i) => {
         if (!r.success) {
+          console.error(`[Karya] Failed for token ${tokens[i].docId}:`, r.error?.code, r.error?.message);
           const code = r.error?.code || "";
           if (code.includes("invalid") || code.includes("not-registered") || code.includes("unregistered")) {
             db.collection("karya_fcm_tokens").doc(tokens[i].docId).delete();
           }
+        } else {
+          console.log(`[Karya] Successfully delivered to ${tokens[i].docId}`);
         }
       });
 
       await taskDoc.ref.update({ notifiedAt: FieldValue.serverTimestamp() });
     } catch(e) {
-      console.error("FCM error:", e.message);
+      console.error(`[Karya] FCM send error for "${task.title}":`, e.message);
     }
   }
+  console.log("[Karya] Check complete");
 });
