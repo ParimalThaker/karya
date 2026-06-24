@@ -95,9 +95,12 @@ a{color:var(--acc)}
 /* TASK META */
 .task-meta{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:6px;-ms-flex-wrap:wrap;flex-wrap:wrap}
 .prio-dot{width:7px;height:7px;border-radius:50%;-ms-flex-negative:0;flex-shrink:0}
-.due-lbl{font-size:11px;color:var(--mut)}
+.due-lbl{font-size:22px;color:var(--mut);font-weight:600}
 .due-lbl.overdue{color:#FF6B6B;font-weight:700}
 .due-lbl.soon{color:#E8720C;font-weight:600}
+body.is-desktop .due-lbl{font-size:44px}
+body.is-desktop .due-lbl.overdue{font-size:44px}
+body.is-desktop .due-lbl.soon{font-size:44px}
 .menu-btn{background:none;border:none;color:var(--mut);font-size:20px;padding:0 3px;-ms-flex-negative:0;flex-shrink:0;line-height:1;-webkit-align-self:flex-start;-ms-flex-item-align:start;align-self:flex-start}
 .empty-state{text-align:center;padding:60px 20px;color:var(--mut)}
 .empty-icon{font-size:42px;margin-bottom:12px}
@@ -652,6 +655,12 @@ body.glass-theme .img-drop {
 @-webkit-keyframes trophy-bounce{from{-webkit-transform:translateY(0) scale(1);transform:translateY(0) scale(1)}to{-webkit-transform:translateY(-12px) scale(1.08);transform:translateY(-12px) scale(1.08)}}
 @keyframes trophy-bounce{from{transform:translateY(0) scale(1)}to{transform:translateY(-12px) scale(1.08)}}
 
+
+/* TASK HIGHLIGHT FLASH (notification tap) */
+@-webkit-keyframes taskFlash{0%,100%{background:var(--card);box-shadow:var(--sh)}25%,75%{background:#FFF3D6;box-shadow:0 0 0 3px #E8720C,var(--sh)}50%{background:var(--card);box-shadow:var(--sh)}}
+@keyframes taskFlash{0%,100%{background:var(--card);box-shadow:var(--sh)}25%,75%{background:#FFF3D6;box-shadow:0 0 0 3px #E8720C,var(--sh)}50%{background:var(--card);box-shadow:var(--sh)}}
+.task-flash{-webkit-animation:taskFlash 1s ease-in-out 5;animation:taskFlash 1s ease-in-out 5}
+
 </style>
 </head>
 <body>
@@ -763,10 +772,8 @@ if ("serviceWorker" in navigator) {
     if (event.data && event.data.type === "SHOW_REMINDER") {
       const taskId = event.data.taskId;
       if (taskId) {
-        const task = S.tasks.find(t => t.id === taskId);
-        if (task) {
-          setTimeout(() => showBigNotif(task.title, task.id), 500);
-        }
+        markReminderSeen(taskId); // tapped from notification — highlight only, no re-popup/chime
+        setTimeout(() => highlightTask(taskId), 400);
       }
     }
   });
@@ -778,12 +785,61 @@ function checkUrlReminder() {
   const remindId = params.get("remind");
   if (remindId && S.tasks.length > 0) {
     const task = S.tasks.find(t => t.id === remindId);
-    if (task) setTimeout(() => showBigNotif(task.title, task.id), 800);
+    if (task) {
+      markReminderSeen(remindId); // tapping notification = acknowledged, never re-popup for this instance
+      setTimeout(() => highlightTask(remindId), 600);
+    }
+  }
+}
+
+// Highlight a task card with a brief flash — used when opened via notification tap
+function highlightTask(taskId) {
+  const card = document.querySelector("[data-task-id='" + taskId + "']");
+  if (!card) {
+    // Task may not be in current view — switch to a view that shows it
+    const t = S.tasks.find(x => x.id === taskId);
+    if (t && S.user) {
+      const assigned = isAssigned(t, S.user);
+      if (t.status === "completed") { window.setView(assigned ? "mydone" : "teamdone"); }
+      else { window.setView(assigned ? "mine" : "team"); }
+      setTimeout(() => highlightTask(taskId), 300);
+    }
+    return;
+  }
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  card.classList.add("task-flash");
+  setTimeout(() => card.classList.remove("task-flash"), 5000);
+}
+
+
+// Check for reminders that FCM already sent (notifiedAt set) but were dismissed without
+// any action tap (notifAcknowledged stays false). Show in-app popup+chime ONCE for these.
+function checkDismissedReminders() {
+  const params = new URLSearchParams(location.search);
+  if (params.get("remind")) return; // already handled by checkUrlReminder
+  if (!S.user) return;
+  const candidate = S.tasks.find(t => {
+    if (t.status === "completed" || wasReminderSeen(t.id)) return false;
+    if (!isAssigned(t, S.user)) return false;
+    // notifiedAt set (FCM fired) but notifAcknowledged is explicitly false = dismissed/ignored
+    return t.notifiedAt && t.notifAcknowledged === false;
+  });
+  if (candidate) {
+    markReminderSeen(candidate.id);
+    setTimeout(() => showBigNotif(candidate.title, candidate.id), 700);
   }
 }
 
 // ── BOOT ─────────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
+  console.log("[Karya] Build: 2026-06-21 v-member-filter-fix-2");
+  // Platform detection: Windows desktop gets larger due-date text
+  const ua = navigator.userAgent;
+  const isAndroid = /Android/i.test(ua);
+  const isMobile  = /Android|iPhone|iPad|iPod/i.test(ua);
+  if (!isMobile) document.body.classList.add("is-desktop");
+  S.isAndroid = isAndroid;
+
   S.theme = localStorage.getItem("k_theme") || "navy";
   loadTeam();
   checkSession();
@@ -946,6 +1002,7 @@ function loadLocal() {
   renderTaskArea(); updateStats();
   rescheduleAllReminders();
   checkUrlReminder();
+  setTimeout(checkDismissedReminders, 1200);
 }
 function saveLocal() {
   localStorage.setItem("k_tasks", JSON.stringify(S.tasks));
@@ -1088,6 +1145,25 @@ function linkify(s) {
     .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--acc)">$1</a>');
 }
 
+function buildFilterBar() {
+  const memberBtn = (S.view==="team"||S.view==="teamdone")
+    ? "<button class='prio-sel' id='member-filter-btn' onclick='window.showMemberFilterPicker()' style='cursor:pointer;white-space:nowrap'>\uD83D\uDC65 " + ((S.memberFilterList&&S.memberFilterList.length) ? S.memberFilterList.length+" Selected" : "All Members") + "</button>"
+    : "";
+  return "<span class='f-label'>Filter:</span>"
+    + "<select class='prio-sel' onchange='S.filter=this.value;renderTaskArea()'>"
+    + "<option value='all'" + (S.filter==="all"?" selected":"") + ">All Priority</option>"
+    + "<option value='high'" + (S.filter==="high"?" selected":"") + ">\uD83D\uDD34 High</option>"
+    + "<option value='medium'" + (S.filter==="medium"?" selected":"") + ">\uD83D\uDFE1 Medium</option>"
+    + "<option value='low'" + (S.filter==="low"?" selected":"") + ">\uD83D\uDFE2 Low</option>"
+    + "</select>"
+    + memberBtn;
+}
+
+function refreshFilterBar() {
+  const el = document.getElementById("filter-bar-wrap");
+  if (el) el.innerHTML = buildFilterBar();
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────
 function buildMain() {
   const u    = S.user;
@@ -1117,16 +1193,7 @@ function buildMain() {
       <button class="stat-btn ${S.view==="teamdone"?"active":""}" onclick="window.setView('teamdone')"><span class="s-num" id="sn-tdone">0</span><span class="s-lbl">Team Done</span></button>
       ${u.isAdmin ? "<div class=\"s-div\"></div><button class=\"stat-btn " + (S.view==="private"?"active":"") + "\" onclick=\"window.setView('private')\"><span class=\"s-num\" id=\"sn-priv\">0</span><span class=\"s-lbl\">🔒 Private</span></button>" : ""}
     </div>
-    <div class="filter-bar">
-      <span class="f-label">Filter:</span>
-      <select class="prio-sel" onchange="S.filter=this.value;renderTaskArea()">
-        <option value="all">All Priority</option>
-        <option value="high">🔴 High</option>
-        <option value="medium">🟡 Medium</option>
-        <option value="low">🟢 Low</option>
-      </select>
-      ${(S.view==="team"||S.view==="teamdone") ? "<button class=\"prio-sel\" id=\"member-filter-btn\" onclick=\"window.showMemberFilterPicker()\" style=\"cursor:pointer;white-space:nowrap\">👥 " + (S.memberFilterList&&S.memberFilterList.length ? S.memberFilterList.length+" Selected" : "All Members") + "</button>" : ""}
-    </div>
+    <div class="filter-bar" id="filter-bar-wrap">${buildFilterBar()}</div>
     <div class="task-list" id="task-list"></div>
     <div class="achieve-wrap" id="achieve-wrap">
       <div class="team-prog-row" id="team-prog-row"></div>
@@ -1196,7 +1263,7 @@ function buildCard(t) {
     return `<span class="assignee-pill" style="background:${m?m.color:"#888"}"><span class="ap-dot"></span>${esc(n.split(" ")[0])}</span>`;
   }).join("");
   const snoozeCnt = t.snoozeCount||0;
-  return `<div class="task-card ${overdue?"overdue":""} ${t.status==="completed"?"done-card":""}">
+  return `<div class="task-card ${overdue?"overdue":""} ${t.status==="completed"?"done-card":""}" data-task-id="${t.id}">
     <button class="chk ${t.status==="completed"?"done":""}" onclick="window.toggleTask('${t.id}')">
       ${t.status==="completed"?"✓":""}
     </button>
@@ -1259,13 +1326,14 @@ function renderAchievements() {
 
 window.setView = function(v) {
   S.view=v;
+  if (v!=="team" && v!=="teamdone") S.memberFilterList = [];
   // Fix: stat-btns are at indices 0,2,4,6 (dividers at 1,3,5)
-  // Select only actual buttons not dividers
   const btns = Array.from(document.querySelectorAll(".stat-btn"));
   btns.forEach(b=>b.classList.remove("active"));
   const viewMap={mine:0, team:1, mydone:2, teamdone:3};
   const idx = viewMap[v];
   if (idx !== undefined && btns[idx]) btns[idx].classList.add("active");
+  refreshFilterBar();
   renderTaskArea(); updateStats();
 };
 
@@ -1710,6 +1778,7 @@ window.toggleMemberFilterChip = function(el) {
 window.clearMemberFilter = function() {
   S.memberFilterList = [];
   closeModal();
+  refreshFilterBar();
   renderTaskArea(); updateStats();
 };
 
@@ -1717,6 +1786,7 @@ window.applyMemberFilter = function() {
   const chips = document.querySelectorAll("#member-filter-grid .assign-chip.sel-chip");
   S.memberFilterList = Array.from(chips).map(c => c.dataset.name);
   closeModal();
+  refreshFilterBar();
   renderTaskArea(); updateStats();
 };
 
@@ -1820,9 +1890,15 @@ function _doSchedule(task, remindAt) {
 
     // Method 3: Always show in-app popup (when app is open)
     showBigNotif(notifBody, task.id || "");
+    markReminderSeen(task.id);
 
   }, Math.min(delay, MAX));
 }
+
+// Track which reminders have already shown their popup this session (avoids double-popup)
+const _seenReminders = new Set();
+function markReminderSeen(taskId) { if (taskId) _seenReminders.add(taskId); }
+function wasReminderSeen(taskId) { return _seenReminders.has(taskId); }
 
 
 // ── BIG NOTIFICATION (persistent, 40% screen) ────────────────────
