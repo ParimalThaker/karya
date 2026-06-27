@@ -1808,9 +1808,14 @@ window.showNotifs = function() {
 const _scheduled = new Set(); // track task IDs already scheduled this session
 
 function rescheduleAllReminders() {
-  // Called on every data load/reload — re-arms all pending reminders
+  // Called on every data load/reload — re-arms pending reminders
+  // ONLY schedules tasks assigned to the currently logged-in user
+  if (!S.user) return;
   S.tasks.forEach(t => {
     if (t.status==="completed" || !t.dueDate || _scheduled.has(t.id)) return;
+    // Skip tasks not assigned to the logged-in user
+    const assignees = Array.isArray(t.assignedTo) ? t.assignedTo : [t.assignedTo||"Everyone"];
+    if (!assignees.includes("Everyone") && !assignees.includes(S.user.name)) return;
     const due=new Date(t.dueDate+"T"+(t.dueTime||"23:59"));
     let remindAt;
     if (!t.reminder || t.reminder==="ontime") remindAt=due;
@@ -1825,6 +1830,11 @@ function rescheduleAllReminders() {
 
 function scheduleReminder(task) {
   if (!task.dueDate || task.status==="completed") return;
+  // Only schedule if current user is assigned
+  if (S.user) {
+    const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo||"Everyone"];
+    if (!assignees.includes("Everyone") && !assignees.includes(S.user.name)) return;
+  }
   const due=new Date(task.dueDate+"T"+(task.dueTime||"23:59"));
   let remindAt;
   if (!task.reminder || task.reminder==="ontime") remindAt=due;
