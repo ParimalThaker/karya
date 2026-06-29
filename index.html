@@ -892,8 +892,24 @@ function initFirebase() {
     try {
       messaging = getMessaging(app);
       onMessage(messaging, payload => {
-        const n = payload.notification || {};
-        showBigNotif(n.body || "You have a reminder", null);
+        // FCM foreground message — only show popup if task is assigned to current user
+        const data = payload.data || {};
+        const taskId = data.taskId || "";
+        const title  = (payload.notification || {}).body || data.title || "You have a reminder";
+        // Find the task and check assignment before showing popup
+        const task = taskId ? S.tasks.find(t => t.id === taskId) : null;
+        if (task && S.user) {
+          const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo||"Everyone"];
+          const mine = assignees.includes("Everyone") || assignees.includes(S.user.name);
+          if (!mine) {
+            console.log("[Karya] FCM foreground: skipping popup — not assigned to " + S.user.name);
+            return;
+          }
+        }
+        if (!wasReminderSeen(taskId)) {
+          showBigNotif(title, taskId);
+          markReminderSeen(taskId);
+        }
       });
     } catch(e) { console.warn("FCM:", e); }
   } catch(e) { console.error("Firebase:", e); loadLocal(); }
