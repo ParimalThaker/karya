@@ -892,19 +892,20 @@ function initFirebase() {
     try {
       messaging = getMessaging(app);
       onMessage(messaging, payload => {
-        // FCM foreground message — only show popup if task is assigned to current user
+        // FCM foreground message — strictly only show if assigned to current user
         const data = payload.data || {};
         const taskId = data.taskId || "";
         const title  = (payload.notification || {}).body || data.title || "You have a reminder";
-        // Find the task and check assignment before showing popup
-        const task = taskId ? S.tasks.find(t => t.id === taskId) : null;
-        if (task && S.user) {
-          const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo||"Everyone"];
-          const mine = assignees.includes("Everyone") || assignees.includes(S.user.name);
-          if (!mine) {
-            console.log("[Karya] FCM foreground: skipping popup — not assigned to " + S.user.name);
-            return;
-          }
+        if (!S.user) return; // not logged in yet — ignore
+        if (!taskId) return; // no task ID — can't verify assignment, ignore safely
+        const task = S.tasks.find(t => t.id === taskId);
+        if (!task) return; // task not found in local data — ignore safely
+        // Strict assignment check
+        const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo||"Everyone"];
+        const mine = assignees.includes("Everyone") || assignees.includes(S.user.name);
+        if (!mine) {
+          console.log("[Karya] FCM: blocked popup for " + S.user.name + " — task assigned to: " + assignees.join(","));
+          return;
         }
         if (!wasReminderSeen(taskId)) {
           showBigNotif(title, taskId);
@@ -1309,6 +1310,21 @@ function updateStats() {
   set("sn-mydone",pubTasks.filter(t=>t.status==="completed"&&isAssigned(t,u)).length);
   set("sn-tdone", pubTasks.filter(t=>t.status==="completed").length);
   set("sn-priv",  privTasks.filter(t=>t.status!=="completed").length);
+  // Count forgotten overdue tasks (overdue + no future reminder set) for nudge
+  const now = new Date();
+  const forgotten = pubTasks.filter(t => {
+    if (t.status === "completed" || t.isFuture || !t.dueDate) return false;
+    if (!isAssigned(t, u)) return false;
+    const due = new Date(t.dueDate + "T" + (t.dueTime||"23:59"));
+    if (due >= now) return false; // not overdue yet
+    // No future reminder: either no reminder field, or reminder already fired
+    return true;
+  });
+  const forgottenEl = document.getElementById("sn-forgotten");
+  if (forgottenEl) {
+    forgottenEl.textContent = forgotten.length;
+    forgottenEl.closest(".stat-btn").style.display = forgotten.length > 0 ? "" : "none";
+  }
   renderAchievements();
 }
 
@@ -2104,17 +2120,25 @@ function playWinnerChime() {
 let _winnerShownFor = {}; // prevent repeated celebrations
 
 function checkWinnerCelebration() {
+  // Show 90% celebration to ALL users, but only ONCE per milestone per member
+  // Key = memberId_doneCount so each new milestone (re-crossing 90%) triggers once more
+  // Uses localStorage to track which celebrations this user has already seen
+  if (!S.user) return;
   const team = getTeam();
   team.forEach(m => {
     const assigned = S.tasks.filter(t =>
       (Array.isArray(t.assignedTo) ? t.assignedTo : [t.assignedTo]).includes(m.name)
     );
-    if (assigned.length < 3) return; // need at least 3 tasks to qualify
+    if (assigned.length < 3) return;
     const done = assigned.filter(t => t.status === "completed");
     const pct  = Math.round(done.length / assigned.length * 100);
-    const key  = m.id + "_" + done.length;
-    if (pct >= 90 && !_winnerShownFor[key]) {
-      _winnerShownFor[key] = true;
+    if (pct < 90) return;
+    // Key includes viewer's id so each user tracks their own "seen" state independently
+    const celebKey = "karya_celeb_" + m.id + "_" + done.length;
+    const alreadySeen = localStorage.getItem(celebKey);
+    if (!alreadySeen && !_winnerShownFor[celebKey]) {
+      _winnerShownFor[celebKey] = true;
+      localStorage.setItem(celebKey, "1");
       setTimeout(() => showWinnerCelebration(m, pct, done.length, assigned.length), 800);
     }
   });
