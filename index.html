@@ -661,6 +661,24 @@ body.glass-theme .img-drop {
 @keyframes taskFlash{0%,100%{background:var(--card);box-shadow:var(--sh)}25%,75%{background:#FFF3D6;box-shadow:0 0 0 3px #E8720C,var(--sh)}50%{background:var(--card);box-shadow:var(--sh)}}
 .task-flash{-webkit-animation:taskFlash 1s ease-in-out 5;animation:taskFlash 1s ease-in-out 5}
 
+
+/* BRAVE NOTICE */
+.brave-notice{position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#FB542B,#E8720C);color:#fff;padding:14px 18px;display:flex;flex-direction:column;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);-webkit-animation:slideDown .35s ease;animation:slideDown .35s ease}
+.brave-notice-title{font-size:14px;font-weight:700}
+.brave-notice-body{font-size:12px;line-height:1.6;opacity:.9}
+.brave-notice-steps{font-size:12px;line-height:1.9;opacity:.9;padding-left:4px}
+.brave-notice-btns{display:flex;gap:8px;margin-top:4px}
+.brave-notice-ok{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer}
+.brave-notice-ok:hover{background:rgba(255,255,255,.3)}
+
+
+/* RECURRENCE */
+.recur-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.recur-chip{padding:6px 12px;border-radius:99px;border:1.5px solid var(--bdr);font-size:12px;font-weight:600;cursor:pointer;background:var(--bg);color:var(--txt);-webkit-tap-highlight-color:transparent;border-style:solid}
+.recur-chip.sel{background:var(--nav);color:#fff;border-color:var(--nav)}
+.recur-sub{display:none;margin-top:8px}
+.recur-sub.show{display:block}
+
 </style>
 </head>
 <body>
@@ -830,6 +848,77 @@ function checkDismissedReminders() {
   }
 }
 
+
+// ── BRAVE BROWSER NOTIFICATION SETUP ─────────────────────────────
+function showBraveNotice() {
+  if (document.getElementById("brave-notice")) return;
+  const el = document.createElement("div");
+  el.id = "brave-notice";
+  el.className = "brave-notice";
+  el.innerHTML = [
+    "<div class='brave-notice-title'>",
+    String.fromCodePoint(0x1F981),
+    " Brave Browser — One-time setup needed for notifications",
+    "</div>",
+    "<div class='brave-notice-body'>Brave Shields block push notifications by default. To receive Karya reminders:</div>",
+    "<div class='brave-notice-steps'>",
+    "1. Tap the <strong>Brave Lion icon</strong> in the address bar<br>",
+    "2. Tap <strong>Advanced controls</strong><br>",
+    "3. Turn OFF <strong>Block fingerprinting</strong> for this site<br>",
+    "4. Reload the page and tap Allow when the notification prompt appears",
+    "</div>",
+    "<div class='brave-notice-btns'>",
+    "<button class='brave-notice-ok' onclick='document.getElementById("brave-notice").remove()'>Got it</button>",
+    "<button class='brave-notice-ok' onclick='window.grantNotifPermission();document.getElementById("brave-notice").remove()'>Allow notifications now</button>",
+    "</div>"
+  ].join("");
+  document.body.prepend(el);
+}
+
+
+// ── RECURRING TASK HELPERS ────────────────────────────────────────
+window.pickRecur = function(el, prefix) {
+  document.querySelectorAll("#" + prefix + "-recur-chips .recur-chip")
+    .forEach(c => c.classList.remove("sel"));
+  el.classList.add("sel");
+  const val = el.dataset.val;
+  document.getElementById(prefix + "-recur-val").value = val;
+  const sub = document.getElementById(prefix + "-recur-sub");
+  sub.classList.toggle("show", !!val && val !== "");
+  ["weekly","monthly","custom"].forEach(type => {
+    const el2 = document.getElementById(prefix + "-recur-" + type);
+    if (el2) el2.style.display = (val === type) ? "block" : "none";
+  });
+};
+
+function getRecurConfig(prefix) {
+  const val = document.getElementById(prefix + "-recur-val")?.value || "";
+  if (!val) return null;
+  const config = { type: val };
+  if (val === "weekly") config.dow = parseInt(document.getElementById(prefix + "-recur-dow")?.value || "1");
+  if (val === "monthly") config.dom = parseInt(document.getElementById(prefix + "-recur-dom")?.value || "1");
+  if (val === "custom") config.days = parseInt(document.getElementById(prefix + "-recur-days")?.value || "7");
+  return config;
+}
+
+function nextRecurDate(recur, fromDate) {
+  const d = new Date(fromDate);
+  if (recur.type === "daily") {
+    d.setDate(d.getDate() + 1);
+  } else if (recur.type === "weekly") {
+    const currentDow = d.getDay();
+    let diff = recur.dow - currentDow;
+    if (diff <= 0) diff += 7;
+    d.setDate(d.getDate() + diff);
+  } else if (recur.type === "monthly") {
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(recur.dom);
+  } else if (recur.type === "custom") {
+    d.setDate(d.getDate() + recur.days);
+  }
+  return d;
+}
+
 // ── BOOT ─────────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
   console.log("[Karya] Build: 2026-06-21 v-member-filter-fix-2");
@@ -837,8 +926,15 @@ window.addEventListener("DOMContentLoaded", () => {
   const ua = navigator.userAgent;
   const isAndroid = /Android/i.test(ua);
   const isMobile  = /Android|iPhone|iPad|iPod/i.test(ua);
+  const isBrave   = (navigator.brave && typeof navigator.brave.isBrave === "function");
   if (!isMobile) document.body.classList.add("is-desktop");
   S.isAndroid = isAndroid;
+  S.isBrave   = isBrave;
+  // Brave: disable shields for this site to allow FCM push notifications
+  if (isBrave && !localStorage.getItem("k_brave_notice_shown")) {
+    localStorage.setItem("k_brave_notice_shown", "1");
+    setTimeout(() => showBraveNotice(), 2000);
+  }
 
   S.theme = localStorage.getItem("k_theme") || "navy";
   loadTeam();
@@ -1421,6 +1517,35 @@ window.showCreate = function() {
         <option value="1440">1 day before</option>
         <option value="">No reminder</option>
       </select>
+      <label class="flbl" style="margin-top:6px">🔁 Repeat</label>
+      <div class="recur-row" id="ct-recur-chips">
+        <span class="recur-chip sel" data-val="" onclick="window.pickRecur(this,'ct')">None</span>
+        <span class="recur-chip" data-val="daily" onclick="window.pickRecur(this,'ct')">Daily</span>
+        <span class="recur-chip" data-val="weekly" onclick="window.pickRecur(this,'ct')">Weekly</span>
+        <span class="recur-chip" data-val="monthly" onclick="window.pickRecur(this,'ct')">Monthly</span>
+        <span class="recur-chip" data-val="custom" onclick="window.pickRecur(this,'ct')">Custom</span>
+      </div>
+      <div class="recur-sub" id="ct-recur-sub">
+        <div id="ct-recur-weekly" style="display:none">
+          <label class="flbl">Day of week</label>
+          <select id="ct-recur-dow" class="field-input">
+            <option value="1">Monday</option><option value="2">Tuesday</option>
+            <option value="3">Wednesday</option><option value="4">Thursday</option>
+            <option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
+          </select>
+        </div>
+        <div id="ct-recur-monthly" style="display:none">
+          <label class="flbl">Day of month</label>
+          <select id="ct-recur-dom" class="field-input">
+            ${Array.from({length:28},(_,i)=>"<option value='"+(i+1)+"'>"+(i+1)+(i===0?" (1st)":(i===1?" (2nd)":(i===2?" (3rd)":"")))+"</option>").join("")}
+          </select>
+        </div>
+        <div id="ct-recur-custom" style="display:none">
+          <label class="flbl">Every how many days?</label>
+          <input id="ct-recur-days" type="number" min="1" max="365" value="7" class="field-input" style="width:120px">
+        </div>
+      </div>
+      <input type="hidden" id="ct-recur-val" value="">
     </div>
     <div class="modal-foot">
       <button class="btn-secondary" onclick="closeModal()">Cancel</button>
@@ -1489,6 +1614,7 @@ window.createTask = async function() {
     reminder:document.getElementById("ct-remind")?.value||"ontime",
     isFuture:document.getElementById("ct-future")?.checked||false,
     isPrivate:S.user?.isAdmin&&document.getElementById("ct-private")?.checked||false,
+    recur: getRecurConfig("ct"),
     status:"pending", createdBy:S.user.name,
     createdAt:new Date().toISOString(),
     image:window._img||null
@@ -1524,8 +1650,31 @@ window.toggleTask = async function(id) {
     t.status=ns; saveLocal(); renderTaskArea(); updateStats();
   }
   await addLog(ns==="completed"?"complete":"reopen",`"${t.title}"`);
-  if (ns==="completed"){ closeModal(); showConfetti(); showToast("🎉 Task completed!"); setTimeout(checkWinnerCelebration, 1200); }
-  else showToast("Task reopened");
+  if (ns==="completed"){
+    closeModal(); showConfetti(); showToast("🎉 Task completed!"); setTimeout(checkWinnerCelebration, 1200);
+    // Auto-create next recurrence if task has a repeat config
+    const t2 = S.tasks.find(x=>x.id===id);
+    if (t2?.recur?.type) {
+      const fromDue = t2.dueDate ? new Date(t2.dueDate+"T"+(t2.dueTime||"23:59")) : new Date();
+      const nextDue = nextRecurDate(t2.recur, fromDue);
+      const nextDateStr = nextDue.toISOString().split("T")[0];
+      const nextTask = {
+        ...t2,
+        id: undefined,
+        status: "pending",
+        dueDate: nextDateStr,
+        snoozed: false, snoozeCount: 0, snoozeLog: [],
+        notifiedAt: null, notifAcknowledged: false,
+        createdAt: new Date().toISOString(),
+        createdBy: S.user.name
+      };
+      delete nextTask.id;
+      if (S.fbReady && db) {
+        addDoc(collection(db,"karya_tasks"),{...nextTask,createdAt:serverTimestamp()})
+          .then(() => showToast("🔁 Next " + t2.recur.type + " task created"));
+      }
+    }
+  } else showToast("Task reopened");
 };
 
 // ── DETAIL ────────────────────────────────────────────────────────
