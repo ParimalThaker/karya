@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="application-name" content="Karya">
 <link rel="manifest" href="./manifest.json">
-<link rel="apple-touch-icon" href="/karya-icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./karya-icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./karya-icon-512.png">
+<link rel="apple-touch-icon" href="./karya-icon-192.png">
 <title>Karya – Geetanjali</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -868,8 +870,8 @@ function showBraveNotice() {
     "4. Reload the page and tap Allow when the notification prompt appears",
     "</div>",
     "<div class='brave-notice-btns'>",
-    "<button class='brave-notice-ok' onclick='document.getElementById("brave-notice").remove()'>Got it</button>",
-    "<button class='brave-notice-ok' onclick='window.grantNotifPermission();document.getElementById("brave-notice").remove()'>Allow notifications now</button>",
+    "<button class='brave-notice-ok' onclick='document.getElementById(\"brave-notice\").remove()'>Got it</button>",
+    "<button class='brave-notice-ok' onclick='window.grantNotifPermission();document.getElementById(\"brave-notice\").remove()'>Allow notifications now</button>",
     "</div>"
   ].join("");
   document.body.prepend(el);
@@ -911,12 +913,43 @@ function nextRecurDate(recur, fromDate) {
     if (diff <= 0) diff += 7;
     d.setDate(d.getDate() + diff);
   } else if (recur.type === "monthly") {
+    // Bug fix: jumping straight to setMonth(+1) then setDate(dom) can overflow
+    // into a later month when the CURRENT day-of-month doesn't exist in the
+    // next month (e.g. Jan 31 -> setMonth gives Mar 3, then setDate(dom) lands
+    // in March instead of Feb). Pin to day 1 first so the month step can't overflow.
+    d.setDate(1);
     d.setMonth(d.getMonth() + 1);
     d.setDate(recur.dom);
   } else if (recur.type === "custom") {
     d.setDate(d.getDate() + recur.days);
   }
   return d;
+}
+
+// Bug fix: Date.toISOString() converts to UTC, which silently rolls the date
+// back by one day for any local (IST) time before 5:30am. Extract the
+// calendar date directly from the local Date object instead.
+function localDateStr(d) {
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return y + "-" + mo + "-" + da;
+}
+
+function recurLabel(recur) {
+  if (!recur || !recur.type) return "";
+  if (recur.type === "daily") return "Daily";
+  if (recur.type === "weekly") {
+    const names = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    return "Weekly " + (names[recur.dow] || "");
+  }
+  if (recur.type === "monthly") {
+    const dom = recur.dom || 1;
+    const suffix = (dom===1||dom===21)?"st":(dom===2||dom===22)?"nd":(dom===3||dom===23)?"rd":"th";
+    return "Monthly " + dom + suffix;
+  }
+  if (recur.type === "custom") return "Every " + (recur.days||7) + "d";
+  return "";
 }
 
 // ── BOOT ─────────────────────────────────────────────────────────
@@ -1383,7 +1416,7 @@ function buildCard(t) {
     <div class="task-body" onclick="window.showDetail('${t.id}')">
       <div class="task-title ${t.status==="completed"?"strike":""}">${esc(t.title)}</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">
-        ${t.isFuture?'<span class="future-tag">🔄 Future</span>':""} ${t.isPrivate?'<span class="future-tag" style="background:#FDF2F8;color:#BE185D;border:1px solid #F9A8D4">🔒 Private</span>':""}
+        ${t.isFuture?'<span class="future-tag">🔄 Future</span>':""} ${t.isPrivate?'<span class="future-tag" style="background:#FDF2F8;color:#BE185D;border:1px solid #F9A8D4">🔒 Private</span>':""} ${t.recur?.type?'<span class="future-tag" style="background:#DCFCE7;color:#15803D;border:1px solid #86EFAC">🔁 '+recurLabel(t.recur)+'</span>':""}
         ${t.snoozed&&t.status!=="completed"?`<span class="future-tag snooze-badge" onclick="event.stopPropagation();window.showSnoozeLog('${t.id}')">⏸ Snoozed${snoozeCnt>1?" "+snoozeCnt+"×":""}</span>`:""}
       </div>
       <div class="assignees-row">${pills}</div>
@@ -1657,7 +1690,7 @@ window.toggleTask = async function(id) {
     if (t2?.recur?.type) {
       const fromDue = t2.dueDate ? new Date(t2.dueDate+"T"+(t2.dueTime||"23:59")) : new Date();
       const nextDue = nextRecurDate(t2.recur, fromDue);
-      const nextDateStr = nextDue.toISOString().split("T")[0];
+      const nextDateStr = localDateStr(nextDue);
       const nextTask = {
         ...t2,
         id: undefined,
