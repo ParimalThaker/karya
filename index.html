@@ -689,7 +689,7 @@ body.glass-theme .img-drop {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
-         onSnapshot, serverTimestamp, query, orderBy }
+         onSnapshot, serverTimestamp, query, orderBy, where, getDocs }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getMessaging, getToken, onMessage }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
@@ -732,7 +732,7 @@ let db, messaging;
 const S = {
   authed:false, user:null, tasks:[], logs:[],
   view:"mine", filter:"all", memberFilter:"all", memberFilterList:[], theme:"navy",
-  team:[], fbReady:false
+  team:[], fbReady:false, search:""
 };
 
 const isConfigured = FB_CONFIG.apiKey !== "PASTE_YOUR_API_KEY";
@@ -1121,6 +1121,18 @@ window.grantNotifPermission = async function() {
   } catch(e) { console.warn("Permission error:", e); }
 };
 
+function getDeviceId() {
+  // Stable per-browser ID, persisted in localStorage. Used so a device's
+  // FCM token doc always overwrites the same doc even if the token itself
+  // rotates later — this is what fixes the duplicate 9:35am digest issue.
+  let id = localStorage.getItem("k_device_id");
+  if (!id) {
+    id = "dev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("k_device_id", id);
+  }
+  return id;
+}
+
 async function subscribeFCMToken(reg) {
   if (!messaging || !db || !FB_CONFIG.vapidKey || FB_CONFIG.vapidKey === "PASTE_YOUR_VAPID_KEY") return;
   try {
@@ -1129,13 +1141,37 @@ async function subscribeFCMToken(reg) {
       serviceWorkerRegistration: reg
     });
     if (!token) return;
-    // Store token with user info — Cloud Function uses this to send notifications
-    // Use upsert pattern: store with userId as document ID to avoid duplicates
-    await setDoc(doc(db, "karya_fcm_tokens", S.user.id + "_" + token.slice(-8)), {
+
+    const deviceId = getDeviceId();
+    const docId = S.user.id + "_" + deviceId;
+    const thisUA = navigator.userAgent.slice(0, 80);
+
+    // Clean up stale token docs from BEFORE this fix — the old doc ID scheme
+    // was keyed by the token's own suffix, so a rotated FCM token created a
+    // brand new doc instead of replacing the old one, and both stayed valid
+    // long enough to receive duplicate notifications. Only remove docs that
+    // match THIS device's browser fingerprint, so other real devices for the
+    // same person (e.g. Windows PC vs Android phone) are never touched.
+    try {
+      const q = query(collection(db, "karya_fcm_tokens"), where("userId", "==", S.user.id));
+      const snap = await getDocs(q);
+      const cleanups = [];
+      snap.forEach(d => {
+        if (d.id !== docId && d.data().device === thisUA) {
+          cleanups.push(deleteDoc(doc(db, "karya_fcm_tokens", d.id)));
+        }
+      });
+      if (cleanups.length) await Promise.all(cleanups);
+    } catch(e) { console.warn("[Karya] Token cleanup skipped:", e); }
+
+    // Store token with user info — Cloud Function uses this to send notifications.
+    // Doc ID is now userId + stable device ID (not the token suffix), so a future
+    // token rotation overwrites this same doc instead of creating a duplicate.
+    await setDoc(doc(db, "karya_fcm_tokens", docId), {
       token,
       userId:   S.user.id,
       userName: S.user.name,
-      device:   navigator.userAgent.slice(0, 80),
+      device:   thisUA,
       ts:       serverTimestamp()
     });
     console.log("[Karya] FCM token stored for", S.user.name);
@@ -1340,6 +1376,12 @@ function buildMain() {
       ${u.isAdmin ? "<div class=\"s-div\"></div><button class=\"stat-btn " + (S.view==="private"?"active":"") + "\" onclick=\"window.setView('private')\"><span class=\"s-num\" id=\"sn-priv\">0</span><span class=\"s-lbl\">🔒 Private</span></button>" : ""}
     </div>
     <div class="filter-bar" id="filter-bar-wrap">${buildFilterBar()}</div>
+    <div class="search-bar-wrap" style="padding:0 14px 8px">
+      <input id="global-search" type="text" placeholder="🔍 Search all tasks (pending + done)…"
+        value="${esc(S.search)}"
+        oninput="window.setSearch(this.value)"
+        style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--bdr);background:var(--card);color:var(--txt);font-size:14px">
+    </div>
     <div class="task-list" id="task-list"></div>
     <div class="achieve-wrap" id="achieve-wrap">
       <div class="team-prog-row" id="team-prog-row"></div>
@@ -1362,26 +1404,41 @@ function buildMain() {
 function renderTaskArea() {
   const el = document.getElementById("task-list"); if (!el) return;
   const u  = S.user; if (!u) return;
-  let tasks = [...S.tasks];
-  // Private tasks: admin-only, invisible to all others
-  if (S.view==="private") {
-    tasks = tasks.filter(t=>t.isPrivate && t.createdBy===u.name);
-  } else {
-    // Hide private tasks from ALL normal views
-    tasks = tasks.filter(t=>!t.isPrivate);
-    if (S.view==="mine")     tasks=tasks.filter(t=>t.status!=="completed"&&isAssigned(t,u));
-    if (S.view==="team")     tasks=tasks.filter(t=>t.status!=="completed");
-    if (S.view==="mydone")   tasks=tasks.filter(t=>t.status==="completed"&&isAssigned(t,u));
-    if (S.view==="teamdone") tasks=tasks.filter(t=>t.status==="completed");
-  }
-  if (S.filter!=="all")    tasks=tasks.filter(t=>t.priority===S.filter);
-  if (S.memberFilterList && S.memberFilterList.length && (S.view==="team"||S.view==="teamdone")) {
-    tasks=tasks.filter(t=>{
-      const names = Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo];
-      if (names.includes("Everyone")) return true;
-      return S.memberFilterList.some(mf => names.includes(mf));
+  const searchTerm = (S.search||"").trim().toLowerCase();
+  let tasks;
+
+  if (searchTerm) {
+    // Global search: looks across EVERY task regardless of which tab it's
+    // in (pending or done) or who it's assigned to, so a task that was
+    // accidentally marked done doesn't get lost in a long completed list.
+    // Private tasks still only show for the admin who created them.
+    tasks = S.tasks.filter(t => {
+      if (t.isPrivate && t.createdBy !== u.name) return false;
+      return (t.title||"").toLowerCase().includes(searchTerm);
     });
+  } else {
+    tasks = [...S.tasks];
+    // Private tasks: admin-only, invisible to all others
+    if (S.view==="private") {
+      tasks = tasks.filter(t=>t.isPrivate && t.createdBy===u.name);
+    } else {
+      // Hide private tasks from ALL normal views
+      tasks = tasks.filter(t=>!t.isPrivate);
+      if (S.view==="mine")     tasks=tasks.filter(t=>t.status!=="completed"&&isAssigned(t,u));
+      if (S.view==="team")     tasks=tasks.filter(t=>t.status!=="completed");
+      if (S.view==="mydone")   tasks=tasks.filter(t=>t.status==="completed"&&isAssigned(t,u));
+      if (S.view==="teamdone") tasks=tasks.filter(t=>t.status==="completed");
+    }
+    if (S.filter!=="all")    tasks=tasks.filter(t=>t.priority===S.filter);
+    if (S.memberFilterList && S.memberFilterList.length && (S.view==="team"||S.view==="teamdone")) {
+      tasks=tasks.filter(t=>{
+        const names = Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo];
+        if (names.includes("Everyone")) return true;
+        return S.memberFilterList.some(mf => names.includes(mf));
+      });
+    }
   }
+
   tasks.sort((a,b)=>{
     if(a.isFuture&&!b.isFuture) return 1;
     if(!a.isFuture&&b.isFuture) return -1;
@@ -1389,9 +1446,14 @@ function renderTaskArea() {
     const db2=b.dueDate?new Date(b.dueDate+"T"+(b.dueTime||"23:59")):new Date("2099");
     return da-db2;
   });
-  el.innerHTML = tasks.length
+
+  const searchNotice = searchTerm
+    ? `<div style="padding:6px 4px 10px;font-size:13px;color:var(--mut)">🔍 ${tasks.length} result${tasks.length===1?"":"s"} for "${esc(S.search.trim())}" — searching across all tabs</div>`
+    : "";
+
+  el.innerHTML = searchNotice + (tasks.length
     ? tasks.map(buildCard).join("")
-    : `<div class="empty-state"><div class="empty-icon">📋</div><p>No tasks here — tap ＋ to add one</p></div>`;
+    : `<div class="empty-state"><div class="empty-icon">📋</div><p>${searchTerm?"No tasks match your search":"No tasks here — tap ＋ to add one"}</p></div>`);
   renderAchievements();
 }
 
@@ -1485,8 +1547,15 @@ function renderAchievements() {
     <span class="team-milestone" style="color:${atMile?"#FFD700":"rgba(255,255,255,.35)"}">${atMile?"🎉 Level "+lv+" Unlocked!":"Lv"+lv}</span>`;
 }
 
+window.setSearch = function(v) {
+  S.search = v;
+  renderTaskArea();
+};
+
 window.setView = function(v) {
   S.view=v;
+  S.search="";
+  const si = document.getElementById("global-search"); if (si) si.value="";
   if (v!=="team" && v!=="teamdone") S.memberFilterList = [];
   // Fix: stat-btns are at indices 0,2,4,6 (dividers at 1,3,5)
   const btns = Array.from(document.querySelectorAll(".stat-btn"));
@@ -1677,6 +1746,9 @@ window.createTask = async function() {
 window.toggleTask = async function(id) {
   const t=S.tasks.find(x=>x.id===id); if (!t) return;
   const ns=t.status==="completed"?"pending":"completed";
+  // Check BEFORE the status flips, since this is what we're celebrating
+  const dueAtToggle = t.dueDate ? new Date(t.dueDate+"T"+(t.dueTime||"23:59")) : null;
+  const wasOverdue = dueAtToggle && dueAtToggle < new Date() && !t.isFuture && t.status!=="completed";
   if (S.fbReady&&db) {
     await updateDoc(doc(db,"karya_tasks",id),{status:ns});
   } else {
@@ -1684,9 +1756,14 @@ window.toggleTask = async function(id) {
   }
   await addLog(ns==="completed"?"complete":"reopen",`"${t.title}"`);
   if (ns==="completed"){
-    closeModal(); showConfetti(); showToast("🎉 Task completed!"); setTimeout(checkWinnerCelebration, 1200);
-    // Auto-create next recurrence if task has a repeat config
+    closeModal(); showConfetti();
+
+    // Auto-create next recurrence if task has a repeat config. We capture the
+    // new doc's ID so that if the person hits Undo, we clean that up too —
+    // not just reopen the just-completed task.
     const t2 = S.tasks.find(x=>x.id===id);
+    let recurPromise = null;
+    let createdNextId = null;
     if (t2?.recur?.type) {
       const fromDue = t2.dueDate ? new Date(t2.dueDate+"T"+(t2.dueTime||"23:59")) : new Date();
       const nextDue = nextRecurDate(t2.recur, fromDue);
@@ -1703,10 +1780,36 @@ window.toggleTask = async function(id) {
       };
       delete nextTask.id;
       if (S.fbReady && db) {
-        addDoc(collection(db,"karya_tasks"),{...nextTask,createdAt:serverTimestamp()})
-          .then(() => showToast("🔁 Next " + t2.recur.type + " task created"));
+        recurPromise = addDoc(collection(db,"karya_tasks"),{...nextTask,createdAt:serverTimestamp()})
+          .then(ref => { createdNextId = ref.id; showToast("🔁 Next " + t2.recur.type + " task created"); return ref; });
       }
     }
+
+    // Undo: reopens this task, and if a recurring next-occurrence was just
+    // created as a side effect, removes that too so nothing gets duplicated.
+    const undoCompletion = async () => {
+      try {
+        if (S.fbReady && db) {
+          await updateDoc(doc(db,"karya_tasks",id),{status:"pending"});
+          if (recurPromise) {
+            await recurPromise;
+            if (createdNextId) await deleteDoc(doc(db,"karya_tasks",createdNextId));
+          }
+        } else {
+          const idx=S.tasks.findIndex(x=>x.id===id);
+          if (idx>-1) { S.tasks[idx].status="pending"; saveLocal(); }
+        }
+        await addLog("reopen", `"${t.title}" (undo)`);
+        renderTaskArea(); updateStats();
+        showToast("↩ Undone");
+      } catch(e) {
+        console.error("[Karya] Undo failed:", e);
+        showToast("⚠️ Couldn't undo — reopen it manually from the task menu");
+      }
+    };
+
+    showUndoToast(wasOverdue ? "🏁 You completed overdue task. 🎉" : "🎉 Task completed!", undoCompletion);
+    setTimeout(checkWinnerCelebration, 1200);
   } else showToast("Task reopened");
 };
 
@@ -2387,6 +2490,42 @@ function showToast(msg) {
   document.body.appendChild(t);
   setTimeout(()=>t.classList.add("show"),10);
   setTimeout(()=>{ t.classList.remove("show"); setTimeout(()=>t.remove(),300); },2600);
+}
+
+// Toast with a clickable Undo action, up for ~5 seconds. Unlike showToast,
+// this one needs pointer-events enabled so the button is actually tappable.
+function showUndoToast(msg, onUndo, duration) {
+  duration = duration || 5000;
+  const t=document.createElement("div");
+  t.className="toast";
+  t.style.pointerEvents="auto";
+  t.style.display="inline-flex";
+  t.style.alignItems="center";
+  t.style.gap="14px";
+  t.style.whiteSpace="normal";
+  t.style.maxWidth="86vw";
+  t.style.textAlign="left";
+  const msgSpan=document.createElement("span");
+  msgSpan.textContent=msg;
+  const undoBtn=document.createElement("button");
+  undoBtn.textContent="UNDO";
+  undoBtn.style.cssText="background:none;border:none;color:#FFD166;font-weight:800;font-size:13px;cursor:pointer;padding:0;text-decoration:underline;letter-spacing:.3px;white-space:nowrap;flex-shrink:0";
+  t.appendChild(msgSpan);
+  t.appendChild(undoBtn);
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add("show"),10);
+
+  let settled=false;
+  const dismiss=()=>{ t.classList.remove("show"); setTimeout(()=>t.remove(),300); };
+  const timer=setTimeout(()=>{ if(!settled){ settled=true; dismiss(); } }, duration);
+
+  undoBtn.onclick=()=>{
+    if (settled) return;
+    settled=true;
+    clearTimeout(timer);
+    dismiss();
+    onUndo();
+  };
 }
 </script>
 </body>
