@@ -91,6 +91,16 @@ a{color:var(--acc)}
 
 /* ASSIGNEES */
 .assignees-row{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-ms-flex-wrap:wrap;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.subtask-block{margin:2px 0 8px;padding:8px 10px;background:var(--bg);border-radius:8px;border:1px solid var(--bdr)}
+.subtask-progress-bar{height:5px;border-radius:99px;background:var(--bdr);overflow:hidden;margin-bottom:4px}
+.subtask-progress-fill{height:100%;background:#00C896;border-radius:99px;-webkit-transition:width .3s;transition:width .3s}
+.subtask-progress-label{font-size:10px;color:var(--mut);margin-bottom:6px;font-weight:700;letter-spacing:.2px}
+.subtask-item{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:7px;padding:3px 0;cursor:pointer}
+.subtask-tick{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--bdr);-ms-flex-negative:0;flex-shrink:0;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:11px;color:#fff;background:var(--card)}
+.subtask-tick.done{background:#00C896;border-color:#00C896}
+.subtask-title{font-size:12px;-webkit-box-flex:1;-ms-flex:1;flex:1;color:var(--txt)}
+.subtask-title.strike{text-decoration:line-through;color:var(--mut)}
+.subtask-assignee{font-size:10px;color:var(--mut);background:var(--bdr);padding:1px 7px;border-radius:99px;-ms-flex-negative:0;flex-shrink:0}
 .assignee-pill{display:-webkit-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:3px;padding:3px 9px 3px 5px;border-radius:99px;font-size:12px;font-weight:600;color:#fff}
 .ap-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.6)}
 
@@ -135,6 +145,7 @@ body.is-desktop .due-lbl.soon{font-size:22px}
 
 /* FAB */
 .fab{position:fixed;bottom:100px;right:18px;width:52px;height:52px;border-radius:50%;background:var(--acc);color:#fff;border:none;font-size:26px;box-shadow:0 4px 20px rgba(79,126,255,.45);z-index:200;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;-webkit-transition:-webkit-transform .15s;transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.fab-quick{bottom:164px;width:44px;height:44px;font-size:20px;background:#F59E0B;box-shadow:0 4px 20px rgba(245,158,11,.4)}
 .fab:active{-webkit-transform:scale(.92);transform:scale(.92)}
 
 /* MODAL */
@@ -1304,9 +1315,22 @@ function initials(name) {
   return p.length===1 ? p[0][0].toUpperCase() : (p[0][0]+p[p.length-1][0]).toUpperCase();
 }
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+// Scoring rule: a person's score counts a task once it's assigned to them
+// directly OR they're tagged on any of its subtasks — but the score only
+// moves when the PARENT task completes (individual subtask ticks don't
+// change task.status, so this naturally falls out of the same done/total math).
+function isTaggedOn(t, name) {
+  const mains = Array.isArray(t.assignedTo) ? t.assignedTo : [t.assignedTo];
+  if (mains.includes(name)) return true;
+  if (Array.isArray(t.subtasks) && t.subtasks.some(s=>s.assignee===name)) return true;
+  return false;
+}
+function taggedTasksFor(name) {
+  return S.tasks.filter(t=>isTaggedOn(t,name));
+}
 function isWinner(id) {
   const m = getMember(id); if (!m.name) return false;
-  const assigned = S.tasks.filter(t=>(Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo]).includes(m.name));
+  const assigned = taggedTasksFor(m.name);
   if (!assigned.length) return false;
   return Math.round(assigned.filter(t=>t.status==="completed").length/assigned.length*100) >= 90;
 }
@@ -1393,6 +1417,7 @@ function buildMain() {
         ${team.map(m=>`<div class="tav-wrap"><div class="av-sm" style="background:${m.color}">${initials(m.name)}</div><span class="tav-nm">${esc(m.name.split(" ")[0])}</span></div>`).join("")}
       </div>
     </div>
+    <button class="fab fab-quick" onclick="window.showQuickAdd()" title="Quick Add">⚡</button>
     <button class="fab" onclick="window.showCreate()">＋</button>
     <div id="modal-overlay" class="modal-overlay hidden" onclick="window.closeModalClick(event)">
       <div class="modal" id="modal-box" onclick="event.stopPropagation()"></div>
@@ -1482,6 +1507,7 @@ function buildCard(t) {
         ${t.snoozed&&t.status!=="completed"?`<span class="future-tag snooze-badge" onclick="event.stopPropagation();window.showSnoozeLog('${t.id}')">⏸ Snoozed${snoozeCnt>1?" "+snoozeCnt+"×":""}</span>`:""}
       </div>
       <div class="assignees-row">${pills}</div>
+      ${buildSubtaskBlock(t)}
       <div class="task-meta">
         <span class="prio-dot" style="background:${pc}"></span>
         ${due?`<span class="due-lbl ${overdue?"overdue":soon?"soon":""}">${overdue?"⚠ Overdue":fmtDue(due)}</span>`:""}
@@ -1489,6 +1515,24 @@ function buildCard(t) {
     </div>
     <button class="menu-btn" onclick="window.showMenu('${t.id}')">⋮</button>
   </div>`;
+}
+
+function buildSubtaskBlock(t) {
+  if (!Array.isArray(t.subtasks) || !t.subtasks.length) return "";
+  const doneCount = t.subtasks.filter(s=>s.done).length;
+  const total = t.subtasks.length;
+  const pct = Math.round((doneCount/total)*100);
+  const rows = t.subtasks.map(s => `
+    <div class="subtask-item" onclick="event.stopPropagation();window.toggleSubtask('${t.id}','${s.id}')">
+      <span class="subtask-tick ${s.done?"done":""}">${s.done?"✓":""}</span>
+      <span class="subtask-title ${s.done?"strike":""}">${esc(s.title)}</span>
+      ${s.assignee?`<span class="subtask-assignee">${esc(s.assignee.split(" ")[0])}</span>`:""}
+    </div>`).join("");
+  return `<div class="subtask-block" onclick="event.stopPropagation()">
+      <div class="subtask-progress-bar"><div class="subtask-progress-fill" style="width:${pct}%"></div></div>
+      <div class="subtask-progress-label">${doneCount}/${total} steps done</div>
+      <div class="subtask-list">${rows}</div>
+    </div>`;
 }
 
 function updateStats() {
@@ -1525,7 +1569,7 @@ function renderAchievements() {
   if (!inner) return;
   const team=getTeam();
   const stats=team.map(m=>{
-    const assigned=S.tasks.filter(t=>(Array.isArray(t.assignedTo)?t.assignedTo:[t.assignedTo]).includes(m.name));
+    const assigned=taggedTasksFor(m.name);
     const done=assigned.filter(t=>t.status==="completed");
     const pct=assigned.length?Math.round(done.length/assigned.length*100):0;
     return {name:m.name.split(" ")[0],color:m.color,pct,done:done.length,total:assigned.length,winner:pct>=90&&assigned.length>0};
@@ -1565,6 +1609,220 @@ window.setView = function(v) {
   if (idx !== undefined && btns[idx]) btns[idx].classList.add("active");
   refreshFilterBar();
   renderTaskArea(); updateStats();
+};
+
+// ── QUICK ADD: conversational text → task ─────────────────────────
+function qaEscapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function qaYmd(d) { return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+function parseQuickAddText(raw) {
+  let text = " " + raw.trim() + " ";
+  const warnings = [];
+  const now = new Date();
+
+  // Strip common lead-in filler so it doesn't pollute the title
+  text = text.replace(/\b(remind\s+(me|us|everyone)\s+to|please|pls)\b/gi, " ");
+
+  // ---- 1. Detect a team member's name ----
+  const team = getTeam() || [];
+  let assignee = null;
+  const candidates = [];
+  team.forEach(m => {
+    candidates.push(m.name);
+    m.name.split(" ").forEach(tok => { if (tok.length >= 3) candidates.push(tok); });
+  });
+  candidates.sort((a,b)=>b.length-a.length);
+  const lowerText = text.toLowerCase();
+  for (const cand of candidates) {
+    if (lowerText.indexOf(cand.toLowerCase()) !== -1) {
+      const full = team.find(m => m.name === cand || m.name.split(" ").includes(cand));
+      assignee = full ? full.name : cand;
+      const re = new RegExp("\\b(remind|tell|ask)?\\s*" + qaEscapeRegex(cand) + "\\b\\s*(\\bto\\b)?", "i");
+      text = text.replace(re, " ");
+      break;
+    }
+  }
+
+  // ---- 2. Detect date ----
+  const weekdays = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+  const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+  let dueDate = null, m;
+
+  if (/\bday after tomorrow\b/i.test(text)) {
+    const d=new Date(now); d.setDate(d.getDate()+2); text=text.replace(/\bday after tomorrow\b/i," "); dueDate=qaYmd(d);
+  } else if (/\btoday\b/i.test(text)) {
+    text=text.replace(/\btoday\b/i," "); dueDate=qaYmd(now);
+  } else if (/\btomorrow\b/i.test(text)) {
+    const d=new Date(now); d.setDate(d.getDate()+1); text=text.replace(/\btomorrow\b/i," "); dueDate=qaYmd(d);
+  } else if ((m = text.match(/\bin\s+(\d+)\s*days?\b/i))) {
+    const d=new Date(now); d.setDate(d.getDate()+parseInt(m[1])); text=text.replace(m[0]," "); dueDate=qaYmd(d);
+  } else if ((m = text.match(/\b(next\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i))) {
+    const wantDow = weekdays.indexOf(m[2].toLowerCase());
+    const d = new Date(now);
+    let diff = wantDow - d.getDay();
+    if (diff <= 0) diff += 7;
+    d.setDate(d.getDate()+diff);
+    text = text.replace(m[0]," ");
+    dueDate = qaYmd(d);
+  } else if ((m = text.match(/\b(\d{1,2})(st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december)\b/i))) {
+    const day=parseInt(m[1]); const month=monthNames.indexOf(m[3].toLowerCase());
+    let d=new Date(now.getFullYear(),month,day);
+    if (d < new Date(now.getFullYear(),now.getMonth(),now.getDate())) d=new Date(now.getFullYear()+1,month,day);
+    text = text.replace(m[0]," ");
+    dueDate = qaYmd(d);
+  } else if ((m = text.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/))) {
+    const day=parseInt(m[1]), month=parseInt(m[2])-1;
+    const year = m[3] ? (m[3].length===2?2000+parseInt(m[3]):parseInt(m[3])) : now.getFullYear();
+    text = text.replace(m[0]," ");
+    dueDate = qaYmd(new Date(year,month,day));
+  }
+
+  if (!dueDate) { dueDate = qaYmd(now); warnings.push("No date detected — defaulted to today."); }
+
+  // ---- 3. Detect time ----
+  let dueTime = null;
+  if (/\bat\s+noon\b/i.test(text)) { text=text.replace(/\bat\s+noon\b/i," "); dueTime="12:00"; }
+  else if (/\bnoon\b/i.test(text)) { text=text.replace(/\bnoon\b/i," "); dueTime="12:00"; }
+  else if (/\bat\s+midnight\b/i.test(text)) { text=text.replace(/\bat\s+midnight\b/i," "); dueTime="00:00"; }
+  else if (/\bmidnight\b/i.test(text)) { text=text.replace(/\bmidnight\b/i," "); dueTime="00:00"; }
+  else if ((m = text.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i)) || (m = text.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i))) {
+    let h=parseInt(m[1]); const min=m[2]?parseInt(m[2]):0; const ap=(m[3]||"").toLowerCase();
+    if (ap==="pm" && h!==12) h+=12;
+    if (ap==="am" && h===12) h=0;
+    if (!ap && h>=1 && h<=7) h+=12; // bare small hour with no am/pm, e.g. "at 6" — assume evening
+    text = text.replace(m[0]," ");
+    dueTime = String(h).padStart(2,"0")+":"+String(min).padStart(2,"0");
+  } else if ((m = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/))) {
+    text=text.replace(m[0]," ");
+    dueTime = m[1].padStart(2,"0")+":"+m[2];
+  }
+
+  // Strip vague time-of-day words — we don't infer a specific time from these,
+  // so leaving them in would just clutter the title
+  text = text.replace(/\b(this\s+)?(morning|afternoon|evening|night)\b/gi," ");
+
+  if (!dueTime) { dueTime = "17:00"; warnings.push("No time detected — defaulted to 5:00 PM."); }
+
+  // ---- 4. Clean up leftover title text ----
+  let title = text.replace(/\s{2,}/g," ").trim();
+  title = title.replace(/^[\-:,\s]+|[\-:,\s]+$/g,"");
+  // Strip dangling leading/trailing filler prepositions left over after
+  // removing date/time/name phrases (e.g. "Meeting with on" -> "Meeting")
+  let prevTitle;
+  do {
+    prevTitle = title;
+    title = title.replace(/^(on|at|in|for|with|to|by|and)\s+/i,"").trim();
+    title = title.replace(/\s+(on|at|in|for|with|to|by|and)$/i,"").trim();
+  } while (title !== prevTitle && title.length > 0);
+  if (!title) {
+    title = "";
+    warnings.push("Couldn't find a task description — please add one below.");
+  } else {
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+  }
+
+  return { title, dueDate, dueTime, assignee: assignee || (S.user ? S.user.name : "Everyone"), warnings };
+}
+
+window.showQuickAdd = function(prefill) {
+  const val = prefill !== undefined ? prefill : (window._qaRaw || "");
+  openModal(`
+    <div class="modal-hdr"><h2>⚡ Quick Add</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <label class="flbl">Type it naturally</label>
+      <textarea id="qa-input" class="field-input field-ta" style="min-height:80px" placeholder="e.g. water plants tomorrow at 6pm&#10;or: remind Neha to call the vendor Friday" autofocus>${esc(val)}</textarea>
+      <div style="font-size:12px;color:var(--mut);margin-top:6px">Mention a day and time if you can — I'll default to today, 5 PM if I can't find one. Mention a teammate's name if it's not for you.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="window.previewQuickAdd()">Preview →</button>
+    </div>`);
+  const ta = document.getElementById("qa-input");
+  if (ta) ta.focus();
+};
+
+window.previewQuickAdd = function() {
+  const raw = (document.getElementById("qa-input")?.value || "").trim();
+  if (!raw) { const el=document.getElementById("qa-input"); if (el) el.style.borderColor="#FF6B6B"; return; }
+  window._qaRaw = raw;
+  const parsed = parseQuickAddText(raw);
+  window._qaParsed = parsed;
+  showQuickAddPreview(parsed);
+};
+
+function showQuickAddPreview(parsed) {
+  const team = getTeam();
+  openModal(`
+    <div class="modal-hdr"><h2>Confirm Task</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      ${parsed.warnings.length ? `<div style="background:#FFF3DC;color:#9A6700;padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:10px">⚠️ ${esc(parsed.warnings.join(" "))}</div>` : ""}
+      <label class="flbl">Task Title</label>
+      <input id="qap-title" class="field-input" style="font-size:16px;font-weight:700" value="${esc(parsed.title)}">
+      <label class="flbl">Assign To</label>
+      <div class="assign-grid" id="assign-grid">
+        <span class="assign-chip" data-name="Everyone" onclick="window.toggleChip(this,'create')" style="background:#1B2B4B;color:#fff;border-color:#1B2B4B">👥 Everyone</span>
+        ${team.map(m=>`<span class="assign-chip" data-name="${esc(m.name)}" data-color="${m.color}" onclick="window.toggleChip(this,'create')" style="border-color:${m.color}"><span class="chip-dot" style="background:${m.color}"></span>${esc(m.name.split(" ")[0])}</span>`).join("")}
+      </div>
+      <div class="field-row">
+        <div class="field-half"><label class="flbl">Due Date</label>
+          <input id="qap-date" type="date" class="field-input" value="${parsed.dueDate}">
+        </div>
+        <div class="field-half"><label class="flbl">Due Time</label>
+          ${buildTimePicker("qap-time", parsed.dueTime)}
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="window.showQuickAdd(window._qaRaw)">← Edit text</button>
+      <button class="btn-primary" onclick="window.confirmQuickAdd()">✓ Create Task</button>
+    </div>`);
+  setTimeout(()=>{
+    const grid = document.getElementById("assign-grid"); if (!grid) return;
+    const chips = Array.from(grid.querySelectorAll(".assign-chip"));
+    const target = chips.find(c=>c.dataset.name===parsed.assignee) || chips.find(c=>c.dataset.name==="Everyone");
+    if (target) window.toggleChip(target, "create");
+  }, 0);
+}
+
+window.confirmQuickAdd = async function() {
+  const title=(document.getElementById("qap-title")?.value||"").trim();
+  if (!title){ document.getElementById("qap-title").style.borderColor="#FF6B6B"; return; }
+  const dueDate=document.getElementById("qap-date")?.value;
+  if (!dueDate){ alert("Please set a due date."); return; }
+  const dueTime=(function(){ var h=document.getElementById("qap-time-h"); var m2=document.getElementById("qap-time-m"); var a=document.getElementById("qap-time-ap"); if(h&&m2&&a) return window.to24(h.value,m2.value,a.value); return document.getElementById("qap-time-hidden")?.value||"17:00"; })();
+  const task={
+    title, description:"",
+    assignedTo:getChips("assign-grid"),
+    priority:"medium",
+    dueDate, dueTime,
+    reminder:"ontime",
+    isFuture:false,
+    isPrivate:false,
+    recur:null,
+    status:"pending", createdBy:S.user.name,
+    createdAt:new Date().toISOString(),
+    image:null
+  };
+  if (S.fbReady&&db) {
+    try {
+      const ref = await addDoc(collection(db,"karya_tasks"),{...task,createdAt:serverTimestamp()});
+      task.id = ref.id;
+    } catch(fireErr) {
+      console.error("Firestore write failed:", fireErr);
+      task.id="t"+Date.now(); S.tasks.unshift(task); saveLocal(); renderTaskArea(); updateStats();
+      showToast("⚠️ Saved locally — check Firebase rules");
+      scheduleReminder(task);
+      window._qaRaw=""; window._qaParsed=null;
+      closeModal();
+      return;
+    }
+  } else {
+    task.id="t"+Date.now(); S.tasks.unshift(task); saveLocal(); renderTaskArea(); updateStats();
+  }
+  scheduleReminder(task);
+  await addLog("create",`"${title}" → ${task.assignedTo.join(", ")} (quick add)`);
+  window._qaRaw=""; window._qaParsed=null;
+  closeModal(); showToast("⚡ Task created ✓");
 };
 
 // ── CREATE TASK ───────────────────────────────────────────────────
@@ -1648,6 +1906,9 @@ window.showCreate = function() {
         </div>
       </div>
       <input type="hidden" id="ct-recur-val" value="">
+      <label class="flbl" style="margin-top:10px">✅ Checklist / Subtasks (optional)</label>
+      <div id="ct-subtasks-list"></div>
+      <button type="button" class="btn-secondary" style="margin-top:2px;padding:8px 14px;font-size:13px" onclick="window.addSubtaskRow('ct')">+ Add step</button>
     </div>
     <div class="modal-foot">
       <button class="btn-secondary" onclick="closeModal()">Cancel</button>
@@ -1717,6 +1978,7 @@ window.createTask = async function() {
     isFuture:document.getElementById("ct-future")?.checked||false,
     isPrivate:S.user?.isAdmin&&document.getElementById("ct-private")?.checked||false,
     recur: getRecurConfig("ct"),
+    subtasks: getSubtasksFromForm("ct"),
     status:"pending", createdBy:S.user.name,
     createdAt:new Date().toISOString(),
     image:window._img||null
@@ -1749,10 +2011,23 @@ window.toggleTask = async function(id) {
   // Check BEFORE the status flips, since this is what we're celebrating
   const dueAtToggle = t.dueDate ? new Date(t.dueDate+"T"+(t.dueTime||"23:59")) : null;
   const wasOverdue = dueAtToggle && dueAtToggle < new Date() && !t.isFuture && t.status!=="completed";
+
+  // Snapshot subtasks BEFORE any mutation, so Undo can restore exactly what
+  // was checked/unchecked rather than just flipping status back.
+  const subtasksBefore = Array.isArray(t.subtasks) ? t.subtasks.map(s=>({...s})) : null;
+  // Completing the parent directly (not via ticking off the last subtask)
+  // marks every subtask done too, so the checklist stays consistent.
+  const subtasksAfter = (ns==="completed" && subtasksBefore)
+    ? subtasksBefore.map(s=>({...s, done:true}))
+    : subtasksBefore;
+
+  const updatePayload = { status: ns };
+  if (subtasksAfter) updatePayload.subtasks = subtasksAfter;
+
   if (S.fbReady&&db) {
-    await updateDoc(doc(db,"karya_tasks",id),{status:ns});
+    await updateDoc(doc(db,"karya_tasks",id),updatePayload);
   } else {
-    t.status=ns; saveLocal(); renderTaskArea(); updateStats();
+    t.status=ns; if (subtasksAfter) t.subtasks=subtasksAfter; saveLocal(); renderTaskArea(); updateStats();
   }
   await addLog(ns==="completed"?"complete":"reopen",`"${t.title}"`);
   if (ns==="completed"){
@@ -1785,19 +2060,22 @@ window.toggleTask = async function(id) {
       }
     }
 
-    // Undo: reopens this task, and if a recurring next-occurrence was just
+    // Undo: reopens this task, restores subtasks to exactly how they were
+    // before this completion, and if a recurring next-occurrence was just
     // created as a side effect, removes that too so nothing gets duplicated.
     const undoCompletion = async () => {
       try {
+        const restorePayload = { status:"pending" };
+        if (subtasksBefore) restorePayload.subtasks = subtasksBefore;
         if (S.fbReady && db) {
-          await updateDoc(doc(db,"karya_tasks",id),{status:"pending"});
+          await updateDoc(doc(db,"karya_tasks",id),restorePayload);
           if (recurPromise) {
             await recurPromise;
             if (createdNextId) await deleteDoc(doc(db,"karya_tasks",createdNextId));
           }
         } else {
           const idx=S.tasks.findIndex(x=>x.id===id);
-          if (idx>-1) { S.tasks[idx].status="pending"; saveLocal(); }
+          if (idx>-1) { S.tasks[idx].status="pending"; if(subtasksBefore) S.tasks[idx].subtasks=subtasksBefore; saveLocal(); }
         }
         await addLog("reopen", `"${t.title}" (undo)`);
         renderTaskArea(); updateStats();
@@ -1811,6 +2089,70 @@ window.toggleTask = async function(id) {
     showUndoToast(wasOverdue ? "🏁 You completed overdue task. 🎉" : "🎉 Task completed!", undoCompletion);
     setTimeout(checkWinnerCelebration, 1200);
   } else showToast("Task reopened");
+};
+
+// ── SUBTASK / CHECKLIST HELPERS ───────────────────────────────────
+let _subtaskRowSeq = 0;
+function newSubtaskRowId(prefix) { return prefix + "-sub-" + Date.now() + "-" + (_subtaskRowSeq++); }
+
+function buildSubtaskRow(prefix, rowId, data) {
+  data = data || {};
+  const team = getTeam();
+  return `<div class="subtask-row" id="${rowId}" data-id="${esc(data.id||rowId)}" data-done="${data.done?"true":"false"}" style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+    <input type="text" class="field-input subtask-title-input" placeholder="Step title" value="${esc(data.title||"")}" style="flex:1;font-size:13px;padding:8px 10px">
+    <select class="field-input subtask-assignee-select" style="width:100px;font-size:12px;padding:8px 6px">
+      <option value="">Unassigned</option>
+      ${team.map(m=>`<option value="${esc(m.name)}" ${data.assignee===m.name?"selected":""}>${esc(m.name.split(" ")[0])}</option>`).join("")}
+    </select>
+    <button type="button" onclick="window.removeSubtaskRow('${rowId}')" style="background:none;border:none;color:#FF6B6B;font-size:18px;cursor:pointer;padding:2px 6px;flex-shrink:0">✕</button>
+  </div>`;
+}
+
+window.addSubtaskRow = function(prefix, data) {
+  const rowId = newSubtaskRowId(prefix);
+  const container = document.getElementById(prefix + "-subtasks-list");
+  if (!container) return;
+  container.insertAdjacentHTML("beforeend", buildSubtaskRow(prefix, rowId, data));
+};
+
+window.removeSubtaskRow = function(rowId) {
+  const row = document.getElementById(rowId); if (row) row.remove();
+};
+
+function getSubtasksFromForm(prefix) {
+  const container = document.getElementById(prefix + "-subtasks-list");
+  if (!container) return [];
+  return Array.from(container.querySelectorAll(".subtask-row")).map(row => ({
+    id: row.dataset.id,
+    title: (row.querySelector(".subtask-title-input")?.value||"").trim(),
+    assignee: row.querySelector(".subtask-assignee-select")?.value || "",
+    done: row.dataset.done === "true"
+  })).filter(s=>s.title);
+}
+
+window.toggleSubtask = async function(taskId, subId) {
+  const t = S.tasks.find(x=>x.id===taskId); if (!t || !Array.isArray(t.subtasks)) return;
+  const updated = t.subtasks.map(s => s.id===subId ? {...s, done: !s.done} : s);
+  const allDone = updated.length>0 && updated.every(s=>s.done);
+  const wasCompleted = t.status==="completed";
+
+  if (S.fbReady && db) {
+    await updateDoc(doc(db,"karya_tasks",taskId), {subtasks: updated});
+  } else {
+    t.subtasks = updated; saveLocal();
+  }
+  t.subtasks = updated; // instant local feedback; Firestore listener reconciles shortly after
+  renderTaskArea(); updateStats();
+
+  if (allDone && !wasCompleted) {
+    // Auto-complete the parent — reuse the normal completion path so
+    // confetti/toast/recurrence/scoring all behave exactly as they do
+    // when someone ticks the main checkbox directly.
+    await window.toggleTask(taskId);
+  }
+  // Note: unticking a step after the parent had already auto-completed does
+  // NOT auto-reopen the parent — that's a manual action from the task menu,
+  // to avoid surprising side effects like re-triggering recurrence creation.
 };
 
 // ── DETAIL ────────────────────────────────────────────────────────
@@ -1891,6 +2233,11 @@ window.showEdit = function(id) {
           ${buildTimePicker("et-time", t.dueTime||"17:00")}
         </div>
       </div>
+      <label class="flbl" style="margin-top:10px">✅ Checklist / Subtasks (optional)</label>
+      <div id="et-subtasks-list">
+        ${(t.subtasks||[]).map(s=>buildSubtaskRow("et", newSubtaskRowId("et"), s)).join("")}
+      </div>
+      <button type="button" class="btn-secondary" style="margin-top:2px;padding:8px 14px;font-size:13px" onclick="window.addSubtaskRow('et')">+ Add step</button>
     </div>
     <div class="modal-foot">
       <button class="btn-secondary" onclick="closeModal()">Cancel</button>
@@ -1908,6 +2255,7 @@ window.saveEdit = async function(id) {
     dueDate:document.getElementById("et-date")?.value||"",
     dueTime:(function(){ var h=document.getElementById("et-time-h"); var m=document.getElementById("et-time-m"); var a=document.getElementById("et-time-ap"); if(h&&m&&a){ return window.to24(h.value,m.value,a.value); } return document.getElementById("et-time-hidden")?.value||"17:00"; })(),
     isFuture:document.getElementById("et-future")?.checked||false,
+    subtasks:getSubtasksFromForm("et"),
     image:window._clearImg?null:(t?.image||null)
   };
   window._clearImg=false;
@@ -2411,9 +2759,7 @@ function checkWinnerCelebration() {
   if (!S.user) return;
   const team = getTeam();
   team.forEach(m => {
-    const assigned = S.tasks.filter(t =>
-      (Array.isArray(t.assignedTo) ? t.assignedTo : [t.assignedTo]).includes(m.name)
-    );
+    const assigned = taggedTasksFor(m.name);
     if (assigned.length < 3) return;
     const done = assigned.filter(t => t.status === "completed");
     const pct  = Math.round(done.length / assigned.length * 100);
