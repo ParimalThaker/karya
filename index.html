@@ -91,6 +91,25 @@ a{color:var(--acc)}
 
 /* ASSIGNEES */
 .assignees-row{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-ms-flex-wrap:wrap;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.matrix-note{font-size:12px;color:var(--mut);padding:0 4px 10px}
+.matrix-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 4px 20px}
+.matrix-quad{border-radius:12px;padding:10px;min-height:140px;max-height:340px;overflow-y:auto;border:1.5px solid var(--bdr);background:var(--card)}
+.quad-red{border-color:#FCA5A5;background:#FFF5F5}
+.quad-yellow{border-color:#FDE68A;background:#FFFBEB}
+.quad-orange{border-color:#FDBA74;background:#FFF7ED}
+.quad-green{border-color:#86EFAC;background:#F0FDF4}
+body.glass-theme .matrix-quad{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15)}
+.quad-label{font-size:13px;font-weight:800;margin-bottom:2px;color:var(--txt)}
+.quad-sub{font-size:10px;color:var(--mut);margin-bottom:8px;font-weight:600}
+.quad-empty{font-size:11px;color:var(--mut);padding:10px 2px;text-align:center}
+.matrix-card{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:7px 9px;margin-bottom:6px;cursor:pointer}
+body.glass-theme .matrix-card{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15)}
+.matrix-card-title{font-size:12px;font-weight:700;color:var(--txt);margin-bottom:2px}
+.matrix-card-due{font-size:10px;color:var(--mut)}
+.mic-btn{width:100%;margin-top:10px;padding:12px;border-radius:10px;border:1.5px solid var(--bdr);background:var(--card);color:var(--txt);font-size:14px;font-weight:700;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.mic-btn.recording{background:#FF6B6B;color:#fff;border-color:#FF6B6B;-webkit-animation:micPulse 1s infinite;animation:micPulse 1s infinite}
+@-webkit-keyframes micPulse{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes micPulse{0%,100%{opacity:1}50%{opacity:.55}}
 .subtask-block{margin:2px 0 8px;padding:8px 10px;background:var(--bg);border-radius:8px;border:1px solid var(--bdr)}
 .subtask-progress-bar{height:5px;border-radius:99px;background:var(--bdr);overflow:hidden;margin-bottom:4px}
 .subtask-progress-fill{height:100%;background:#00C896;border-radius:99px;-webkit-transition:width .3s;transition:width .3s}
@@ -743,7 +762,7 @@ let db, messaging;
 const S = {
   authed:false, user:null, tasks:[], logs:[],
   view:"mine", filter:"all", memberFilter:"all", memberFilterList:[], theme:"navy",
-  team:[], fbReady:false, search:""
+  team:[], fbReady:false, search:"", matrixMode:false
 };
 
 const isConfigured = FB_CONFIG.apiKey !== "PASTE_YOUR_API_KEY";
@@ -1399,12 +1418,13 @@ function buildMain() {
       <button class="stat-btn ${S.view==="teamdone"?"active":""}" onclick="window.setView('teamdone')"><span class="s-num" id="sn-tdone">0</span><span class="s-lbl">Team Done</span></button>
       ${u.isAdmin ? "<div class=\"s-div\"></div><button class=\"stat-btn " + (S.view==="private"?"active":"") + "\" onclick=\"window.setView('private')\"><span class=\"s-num\" id=\"sn-priv\">0</span><span class=\"s-lbl\">🔒 Private</span></button>" : ""}
     </div>
-    <div class="filter-bar" id="filter-bar-wrap">${buildFilterBar()}</div>
-    <div class="search-bar-wrap" style="padding:0 14px 8px">
-      <input id="global-search" type="text" placeholder="🔍 Search all tasks (pending + done)…"
+    <div class="filter-bar" id="filter-bar-wrap">${S.matrixMode?"":buildFilterBar()}</div>
+    <div class="search-bar-wrap" style="padding:0 14px 8px;display:flex;gap:8px;align-items:center">
+      ${S.matrixMode?"":`<input id="global-search" type="text" placeholder="🔍 Search all tasks (pending + done)…"
         value="${esc(S.search)}"
         oninput="window.setSearch(this.value)"
-        style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--bdr);background:var(--card);color:var(--txt);font-size:14px">
+        style="flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--bdr);background:var(--card);color:var(--txt);font-size:14px">`}
+      <button class="btn-secondary" style="white-space:nowrap;padding:9px 14px;font-size:13px" onclick="window.toggleMatrixView()">${S.matrixMode?"← List":"📊 Matrix"}</button>
     </div>
     <div class="task-list" id="task-list"></div>
     <div class="achieve-wrap" id="achieve-wrap">
@@ -1427,6 +1447,7 @@ function buildMain() {
 
 // ── TASK RENDERING ────────────────────────────────────────────────
 function renderTaskArea() {
+  if (S.matrixMode) { renderMatrixView(); return; }
   const el = document.getElementById("task-list"); if (!el) return;
   const u  = S.user; if (!u) return;
   const searchTerm = (S.search||"").trim().toLowerCase();
@@ -1480,6 +1501,68 @@ function renderTaskArea() {
     ? tasks.map(buildCard).join("")
     : `<div class="empty-state"><div class="empty-icon">📋</div><p>${searchTerm?"No tasks match your search":"No tasks here — tap ＋ to add one"}</p></div>`);
   renderAchievements();
+}
+
+// ── EISENHOWER MATRIX ──────────────────────────────────────────────
+// Personal view only — always the logged-in user's own pending tasks,
+// never mixed with teammates'. Urgent = overdue or due today.
+// Important = High priority only (Medium groups with Low, per spec).
+window.toggleMatrixView = function() {
+  S.matrixMode = !S.matrixMode;
+  render();
+};
+
+function renderMatrixView() {
+  const el = document.getElementById("task-list"); if (!el) return;
+  const u = S.user; if (!u) return;
+  const todayStr = localDateStr(new Date());
+
+  const mine = S.tasks.filter(t => !t.isPrivate && t.status!=="completed" && !t.isFuture && isAssigned(t,u));
+
+  const isUrgent = t => !!t.dueDate && t.dueDate <= todayStr; // YYYY-MM-DD strings compare correctly
+  const isImportant = t => t.priority === "high";
+
+  const quads = { doFirst:[], schedule:[], delegate:[], later:[] };
+  mine.forEach(t=>{
+    const urgent = isUrgent(t), important = isImportant(t);
+    if (urgent && important) quads.doFirst.push(t);
+    else if (!urgent && important) quads.schedule.push(t);
+    else if (urgent && !important) quads.delegate.push(t);
+    else quads.later.push(t);
+  });
+
+  const quadCard = t => `<div class="matrix-card" onclick="window.showDetail('${t.id}')">
+    <div class="matrix-card-title">${esc(t.title)}</div>
+    <div class="matrix-card-due">${t.dueDate ? fmtDue(new Date(t.dueDate+"T"+(t.dueTime||"23:59"))) : "No date"}</div>
+  </div>`;
+
+  const quadHtml = (list, empty) => list.length ? list.map(quadCard).join("") : `<div class="quad-empty">${empty}</div>`;
+
+  el.innerHTML = `
+    <div class="matrix-note">📊 Your tasks only — updates live as you complete things</div>
+    <div class="matrix-grid">
+      <div class="matrix-quad quad-red">
+        <div class="quad-label">🔴 Do First</div>
+        <div class="quad-sub">Urgent &amp; Important</div>
+        <div class="quad-list">${quadHtml(quads.doFirst,"Nothing here 🎉")}</div>
+      </div>
+      <div class="matrix-quad quad-yellow">
+        <div class="quad-label">🟡 Schedule</div>
+        <div class="quad-sub">Important, not urgent</div>
+        <div class="quad-list">${quadHtml(quads.schedule,"Nothing here")}</div>
+      </div>
+      <div class="matrix-quad quad-orange">
+        <div class="quad-label">🟠 Delegate</div>
+        <div class="quad-sub">Urgent, not important</div>
+        <div class="quad-list">${quadHtml(quads.delegate,"Nothing here")}</div>
+      </div>
+      <div class="matrix-quad quad-green">
+        <div class="quad-label">🟢 Eliminate / Later</div>
+        <div class="quad-sub">Not urgent, not important</div>
+        <div class="quad-list">${quadHtml(quads.later,"Nothing here")}</div>
+      </div>
+    </div>`;
+  const aw = document.getElementById("achieve-wrap"); if (aw) aw.style.display = "none";
 }
 
 function buildCard(t) {
@@ -1599,8 +1682,11 @@ window.setSearch = function(v) {
 window.setView = function(v) {
   S.view=v;
   S.search="";
-  const si = document.getElementById("global-search"); if (si) si.value="";
+  const wasMatrix = S.matrixMode;
+  S.matrixMode = false;
   if (v!=="team" && v!=="teamdone") S.memberFilterList = [];
+  if (wasMatrix) { render(); return; }
+  const si = document.getElementById("global-search"); if (si) si.value="";
   // Fix: stat-btns are at indices 0,2,4,6 (dividers at 1,3,5)
   const btns = Array.from(document.querySelectorAll(".stat-btn"));
   btns.forEach(b=>b.classList.remove("active"));
@@ -1732,6 +1818,10 @@ window.showQuickAdd = function(prefill) {
       <label class="flbl">Type it naturally</label>
       <textarea id="qa-input" class="field-input field-ta" style="min-height:80px" placeholder="e.g. water plants tomorrow at 6pm&#10;or: remind Neha to call the vendor Friday" autofocus>${esc(val)}</textarea>
       <div style="font-size:12px;color:var(--mut);margin-top:6px">Mention a day and time if you can — I'll default to today, 5 PM if I can't find one. Mention a teammate's name if it's not for you.</div>
+      <button type="button" class="mic-btn" id="qa-mic-btn"
+        onpointerdown="window.startVoiceCapture(this)" onpointerup="window.stopVoiceCapture()" onpointerleave="window.stopVoiceCapture()" onpointercancel="window.stopVoiceCapture()">
+        🎤 Hold to speak
+      </button>
     </div>
     <div class="modal-foot">
       <button class="btn-secondary" onclick="closeModal()">Cancel</button>
@@ -1739,6 +1829,66 @@ window.showQuickAdd = function(prefill) {
     </div>`);
   const ta = document.getElementById("qa-input");
   if (ta) ta.focus();
+};
+
+// ── VOICE-TO-TASK ──────────────────────────────────────────────────
+let _recognition = null;
+let _recognizing = false;
+
+function getSpeechRecognitionCtor() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+window.startVoiceCapture = function(btn) {
+  if (_recognizing) return;
+  const SR = getSpeechRecognitionCtor();
+  if (!SR) {
+    const isBrave = (navigator.brave && typeof navigator.brave.isBrave === "function");
+    showToast(isBrave ? "🎤 Voice input needs Brave Shields adjusted for this site" : "🎤 Voice input isn't supported in this browser");
+    return;
+  }
+  const ta = document.getElementById("qa-input");
+  _recognition = new SR();
+  _recognition.lang = "en-IN";
+  _recognition.interimResults = true;
+  _recognition.continuous = true;
+  _recognition.maxAlternatives = 1;
+
+  btn.classList.add("recording");
+  btn.textContent = "🔴 Listening… release when done";
+
+  _recognition.onresult = (e) => {
+    let transcript = "";
+    for (let i=0;i<e.results.length;i++) transcript += e.results[i][0].transcript;
+    if (ta) ta.value = transcript;
+  };
+  _recognition.onerror = (e) => {
+    console.warn("[Karya] Speech recognition error:", e.error);
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      showToast("🎤 Microphone permission denied — check browser settings");
+    } else if (e.error === "no-speech") {
+      showToast("🎤 Didn't catch that — try again");
+    }
+  };
+  _recognition.onend = () => {
+    _recognizing = false;
+    const b = document.getElementById("qa-mic-btn");
+    if (b) { b.classList.remove("recording"); b.textContent = "🎤 Hold to speak"; }
+    const finalText = (document.getElementById("qa-input")?.value || "").trim();
+    if (finalText) {
+      window._qaRaw = finalText;
+      const parsed = parseQuickAddText(finalText);
+      window._qaParsed = parsed;
+      showQuickAddPreview(parsed);
+    }
+  };
+
+  try { _recognition.start(); _recognizing = true; }
+  catch(err) { console.warn("[Karya] Could not start speech recognition:", err); }
+};
+
+window.stopVoiceCapture = function() {
+  if (_recognition && _recognizing) _recognition.stop(); // triggers onend, which shows the preview
 };
 
 window.previewQuickAdd = function() {
