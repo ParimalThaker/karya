@@ -106,6 +106,24 @@ body.glass-theme .matrix-quad{background:rgba(255,255,255,.06);border-color:rgba
 body.glass-theme .matrix-card{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15)}
 .matrix-card-title{font-size:12px;font-weight:700;color:var(--txt);margin-bottom:2px}
 .matrix-card-due{font-size:10px;color:var(--mut)}
+.week-nav-row{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px;gap:8px}
+.week-label{font-size:13px;font-weight:700;color:var(--txt)}
+.week-note{font-size:11px;color:var(--mut);padding:0 4px 8px}
+.week-scroll-wrap{overflow-x:auto;padding-bottom:20px;-webkit-overflow-scrolling:touch}
+.week-grid{display:flex;min-width:max-content}
+.week-hour-col{flex-shrink:0;width:52px;position:sticky;left:0;background:var(--bg);z-index:5}
+.week-corner{height:34px}
+.week-other-label{height:30px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mut);font-weight:700;border-bottom:1px solid var(--bdr)}
+.week-hour-label{height:44px;display:flex;align-items:flex-start;justify-content:center;font-size:9px;color:var(--mut);padding-top:2px;border-bottom:1px solid var(--bdr)}
+.week-day-col{flex-shrink:0;width:108px;border-right:1px solid var(--bdr)}
+.week-day-header{height:34px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--txt);background:var(--card);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:4}
+.week-day-header.today{color:var(--acc)}
+.week-other-bucket{min-height:30px;border-bottom:1px solid var(--bdr);padding:2px;background:rgba(0,0,0,.015)}
+.week-slot{min-height:44px;border-bottom:1px solid var(--bdr);padding:2px;box-sizing:border-box}
+.week-slot.drag-over{background:rgba(79,126,255,.15);outline:1.5px dashed var(--acc)}
+.week-task{background:var(--card);border:1px solid var(--bdr);border-radius:5px;padding:3px 5px;margin-bottom:2px;font-size:10px;font-weight:600;color:var(--txt);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.week-task-lifted{opacity:.35}
+.week-task-ghost{position:fixed;pointer-events:none;z-index:9999;width:100px;box-shadow:0 6px 20px rgba(0,0,0,.3);transform:translate(-50%,-50%) rotate(-2deg);background:var(--card);border:1.5px solid var(--acc);border-radius:5px;padding:3px 5px;font-size:10px;font-weight:600;color:var(--txt)}
 .mic-btn{width:100%;margin-top:10px;padding:12px;border-radius:10px;border:1.5px solid var(--bdr);background:var(--card);color:var(--txt);font-size:14px;font-weight:700;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .mic-btn.recording{background:#FF6B6B;color:#fff;border-color:#FF6B6B;-webkit-animation:micPulse 1s infinite;animation:micPulse 1s infinite}
 @-webkit-keyframes micPulse{0%,100%{opacity:1}50%{opacity:.55}}
@@ -762,7 +780,7 @@ let db, messaging;
 const S = {
   authed:false, user:null, tasks:[], logs:[],
   view:"mine", filter:"all", memberFilter:"all", memberFilterList:[], theme:"navy",
-  team:[], fbReady:false, search:"", matrixMode:false
+  team:[], fbReady:false, search:"", matrixMode:false, weekMode:false, weekStart:null
 };
 
 const isConfigured = FB_CONFIG.apiKey !== "PASTE_YOUR_API_KEY";
@@ -1418,13 +1436,14 @@ function buildMain() {
       <button class="stat-btn ${S.view==="teamdone"?"active":""}" onclick="window.setView('teamdone')"><span class="s-num" id="sn-tdone">0</span><span class="s-lbl">Team Done</span></button>
       ${u.isAdmin ? "<div class=\"s-div\"></div><button class=\"stat-btn " + (S.view==="private"?"active":"") + "\" onclick=\"window.setView('private')\"><span class=\"s-num\" id=\"sn-priv\">0</span><span class=\"s-lbl\">🔒 Private</span></button>" : ""}
     </div>
-    <div class="filter-bar" id="filter-bar-wrap">${S.matrixMode?"":buildFilterBar()}</div>
+    <div class="filter-bar" id="filter-bar-wrap">${(S.matrixMode||S.weekMode)?"":buildFilterBar()}</div>
     <div class="search-bar-wrap" style="padding:0 14px 8px;display:flex;gap:8px;align-items:center">
-      ${S.matrixMode?"":`<input id="global-search" type="text" placeholder="🔍 Search all tasks (pending + done)…"
+      ${(S.matrixMode||S.weekMode)?"":`<input id="global-search" type="text" placeholder="🔍 Search all tasks (pending + done)…"
         value="${esc(S.search)}"
         oninput="window.setSearch(this.value)"
         style="flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--bdr);background:var(--card);color:var(--txt);font-size:14px">`}
       <button class="btn-secondary" style="white-space:nowrap;padding:9px 14px;font-size:13px" onclick="window.toggleMatrixView()">${S.matrixMode?"← List":"📊 Matrix"}</button>
+      <button class="btn-secondary" style="white-space:nowrap;padding:9px 14px;font-size:13px" onclick="window.toggleWeekView()">${S.weekMode?"← List":"📅 Week"}</button>
     </div>
     <div class="task-list" id="task-list"></div>
     <div class="achieve-wrap" id="achieve-wrap">
@@ -1448,6 +1467,7 @@ function buildMain() {
 // ── TASK RENDERING ────────────────────────────────────────────────
 function renderTaskArea() {
   if (S.matrixMode) { renderMatrixView(); return; }
+  if (S.weekMode) { renderWeekView(); return; }
   const el = document.getElementById("task-list"); if (!el) return;
   const u  = S.user; if (!u) return;
   const searchTerm = (S.search||"").trim().toLowerCase();
@@ -1509,6 +1529,7 @@ function renderTaskArea() {
 // Important = High priority only (Medium groups with Low, per spec).
 window.toggleMatrixView = function() {
   S.matrixMode = !S.matrixMode;
+  if (S.matrixMode) S.weekMode = false;
   render();
 };
 
@@ -1564,6 +1585,175 @@ function renderMatrixView() {
     </div>`;
   const aw = document.getElementById("achieve-wrap"); if (aw) aw.style.display = "none";
 }
+
+// ── WEEK VIEW — 8am-8pm grid, long-press drag-to-reschedule ────────
+// Shows the logged-in user's own pending tasks (same scope as Matrix),
+// Monday-start week, all 7 days included (Sunday tasks still need a home
+// even though the digest reminder itself skips Sunday).
+function mondayOf(d) {
+  const day = d.getDay(); // 0=Sun..6=Sat
+  const diff = day===0 ? -6 : 1-day;
+  const m = new Date(d);
+  m.setDate(m.getDate()+diff);
+  m.setHours(0,0,0,0);
+  return m;
+}
+function fmtHourLabel(h) {
+  const ap = h<12?"AM":"PM";
+  const h12 = h%12===0?12:h%12;
+  return h12+" "+ap;
+}
+function fmtWeekLabel(start,end) {
+  const opts={month:"short",day:"numeric"};
+  return start.toLocaleDateString("en-US",opts)+" – "+end.toLocaleDateString("en-US",opts);
+}
+
+window.toggleWeekView = function() {
+  S.weekMode = !S.weekMode;
+  if (S.weekMode) { S.matrixMode = false; if (!S.weekStart) S.weekStart = mondayOf(new Date()); }
+  render();
+};
+
+window.shiftWeek = function(dir) {
+  const d = new Date(S.weekStart);
+  d.setDate(d.getDate()+dir*7);
+  S.weekStart = d;
+  renderWeekView();
+};
+
+function renderWeekView() {
+  const el = document.getElementById("task-list"); if (!el) return;
+  const u = S.user; if (!u) return;
+  if (!S.weekStart) S.weekStart = mondayOf(new Date());
+
+  const days = [];
+  for (let i=0;i<7;i++) { const d=new Date(S.weekStart); d.setDate(d.getDate()+i); days.push(d); }
+  const dayNames = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const hours = []; for (let h=8; h<=20; h++) hours.push(h);
+  const todayStr = localDateStr(new Date());
+
+  const mine = S.tasks.filter(t => !t.isPrivate && t.status!=="completed" && isAssigned(t,u));
+
+  const tasksFor = (dateStr, hour) => mine.filter(t=>{
+    if (t.dueDate !== dateStr) return false;
+    const h = t.dueTime ? parseInt(t.dueTime.split(":")[0],10) : 17;
+    return hour===null ? (h<8||h>20) : h===hour;
+  });
+
+  const pc = t => ({high:"#FF6B6B",medium:"#FFB347",low:"#00C896"}[t.priority]||"#aaa");
+  const weekTaskChip = t => `<div class="week-task" data-task-id="${t.id}" style="border-left:3px solid ${pc(t)}">${esc(t.title)}</div>`;
+
+  const dayColHtml = days.map((d,i)=>{
+    const dateStr = localDateStr(d);
+    const isToday = dateStr===todayStr;
+    const otherTasks = tasksFor(dateStr,null);
+    const hourRows = hours.map(h=>{
+      const items = tasksFor(dateStr,h);
+      return `<div class="week-slot" data-date="${dateStr}" data-hour="${h}">${items.map(weekTaskChip).join("")}</div>`;
+    }).join("");
+    return `<div class="week-day-col">
+      <div class="week-day-header ${isToday?"today":""}">${dayNames[i]} ${d.getDate()}</div>
+      <div class="week-other-bucket">${otherTasks.map(weekTaskChip).join("")}</div>
+      ${hourRows}
+    </div>`;
+  }).join("");
+
+  const hourLabelsHtml = hours.map(h=>`<div class="week-hour-label">${fmtHourLabel(h)}</div>`).join("");
+
+  el.innerHTML = `
+    <div class="week-nav-row">
+      <button class="btn-secondary" onclick="window.shiftWeek(-1)">‹ Prev</button>
+      <div class="week-label">${fmtWeekLabel(days[0],days[6])}</div>
+      <button class="btn-secondary" onclick="window.shiftWeek(1)">Next ›</button>
+    </div>
+    <div class="week-note">📅 Your tasks — press and hold a task, then drag it to a new day/time</div>
+    <div class="week-scroll-wrap">
+      <div class="week-grid">
+        <div class="week-hour-col">
+          <div class="week-corner"></div>
+          <div class="week-other-label">Other</div>
+          ${hourLabelsHtml}
+        </div>
+        ${dayColHtml}
+      </div>
+    </div>`;
+  const aw = document.getElementById("achieve-wrap"); if (aw) aw.style.display = "none";
+  attachWeekDragHandlers();
+}
+
+function attachWeekDragHandlers() {
+  document.querySelectorAll(".week-task").forEach(el=>{
+    el.addEventListener("pointerdown", onWeekTaskPointerDown);
+  });
+}
+
+function onWeekTaskPointerDown(e) {
+  const taskId = e.currentTarget.dataset.taskId;
+  const srcEl = e.currentTarget;
+  const startX = e.clientX, startY = e.clientY;
+  let dragging = false, ghost = null;
+
+  const longPressTimer = setTimeout(()=>{
+    dragging = true;
+    srcEl.classList.add("week-task-lifted");
+    ghost = srcEl.cloneNode(true);
+    ghost.classList.add("week-task-ghost");
+    ghost.style.left = startX+"px";
+    ghost.style.top  = startY+"px";
+    document.body.appendChild(ghost);
+  }, 350);
+
+  function onMove(ev) {
+    if (!dragging) {
+      const dx=Math.abs(ev.clientX-startX), dy=Math.abs(ev.clientY-startY);
+      if (dx>10||dy>10) { clearTimeout(longPressTimer); cleanup(); }
+      return;
+    }
+    if (ghost) { ghost.style.left=ev.clientX+"px"; ghost.style.top=ev.clientY+"px"; }
+    document.querySelectorAll(".week-slot.drag-over").forEach(s=>s.classList.remove("drag-over"));
+    const under = document.elementFromPoint(ev.clientX, ev.clientY);
+    const slot = under ? under.closest(".week-slot") : null;
+    if (slot) slot.classList.add("drag-over");
+  }
+
+  function onUp(ev) {
+    clearTimeout(longPressTimer);
+    if (dragging) {
+      const under = document.elementFromPoint(ev.clientX, ev.clientY);
+      const slot = under ? under.closest(".week-slot") : null;
+      if (slot) window.rescheduleTask(taskId, slot.dataset.date, slot.dataset.hour);
+    }
+    cleanup();
+  }
+
+  function cleanup() {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+    document.removeEventListener("pointercancel", onUp);
+    document.querySelectorAll(".week-slot.drag-over").forEach(s=>s.classList.remove("drag-over"));
+    srcEl.classList.remove("week-task-lifted");
+    if (ghost) ghost.remove();
+  }
+
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onUp);
+  document.addEventListener("pointercancel", onUp);
+}
+
+window.rescheduleTask = async function(taskId, newDate, newHour) {
+  const t = S.tasks.find(x=>x.id===taskId); if (!t) return;
+  const newTime = String(newHour).padStart(2,"0")+":00";
+  if (t.dueDate===newDate && t.dueTime===newTime) return; // dropped back in the same slot
+  if (S.fbReady && db) {
+    await updateDoc(doc(db,"karya_tasks",taskId), {dueDate:newDate, dueTime:newTime});
+  } else {
+    t.dueDate=newDate; t.dueTime=newTime; saveLocal();
+  }
+  t.dueDate=newDate; t.dueTime=newTime; // instant local feedback
+  await addLog("reschedule", `"${t.title}" moved to ${newDate} ${newTime}`);
+  renderWeekView();
+  showToast("📅 Rescheduled");
+};
 
 function buildCard(t) {
   const now=new Date();
@@ -1682,8 +1872,9 @@ window.setSearch = function(v) {
 window.setView = function(v) {
   S.view=v;
   S.search="";
-  const wasMatrix = S.matrixMode;
+  const wasMatrix = S.matrixMode || S.weekMode;
   S.matrixMode = false;
+  S.weekMode = false;
   if (v!=="team" && v!=="teamdone") S.memberFilterList = [];
   if (wasMatrix) { render(); return; }
   const si = document.getElementById("global-search"); if (si) si.value="";
