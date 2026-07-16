@@ -1813,7 +1813,7 @@ function parseQuickAddText(raw) {
 window.showQuickAdd = function(prefill) {
   const val = prefill !== undefined ? prefill : (window._qaRaw || "");
   openModal(`
-    <div class="modal-hdr"><h2>⚡ Quick Add</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-hdr"><h2>⚡ Quick Add</h2><button class="modal-x" onclick="window.cancelQuickAdd()">✕</button></div>
     <div class="modal-body">
       <label class="flbl">Type it naturally</label>
       <textarea id="qa-input" class="field-input field-ta" style="min-height:80px" placeholder="e.g. water plants tomorrow at 6pm&#10;or: remind Neha to call the vendor Friday" autofocus>${esc(val)}</textarea>
@@ -1824,16 +1824,26 @@ window.showQuickAdd = function(prefill) {
       </button>
     </div>
     <div class="modal-foot">
-      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-secondary" onclick="window.cancelQuickAdd()">Cancel</button>
       <button class="btn-primary" onclick="window.previewQuickAdd()">Preview →</button>
     </div>`);
   const ta = document.getElementById("qa-input");
   if (ta) ta.focus();
 };
 
+// Bug fix: Cancel/✕ used to just call closeModal(), leaving window._qaRaw
+// populated from the cancelled attempt — so re-opening Quick Add next time
+// showed the old, cancelled text instead of a blank box.
+window.cancelQuickAdd = function() {
+  window._qaRaw = "";
+  window._qaParsed = null;
+  closeModal();
+};
+
 // ── VOICE-TO-TASK ──────────────────────────────────────────────────
 let _recognition = null;
 let _recognizing = false;
+let _voiceFinalTranscript = "";
 
 function getSpeechRecognitionCtor() {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
@@ -1848,6 +1858,7 @@ window.startVoiceCapture = function(btn) {
     return;
   }
   const ta = document.getElementById("qa-input");
+  _voiceFinalTranscript = "";
   _recognition = new SR();
   _recognition.lang = "en-IN";
   _recognition.interimResults = true;
@@ -1857,10 +1868,21 @@ window.startVoiceCapture = function(btn) {
   btn.classList.add("recording");
   btn.textContent = "🔴 Listening… release when done";
 
+  // Bug fix: the old version re-summed e.results from index 0 on every
+  // event. Some Android speech engines re-emit growing overlapping
+  // fragments as separate entries rather than replacing one in place,
+  // which made that naive re-sum snowball into repeated text. Using
+  // e.resultIndex processes only what's NEW since the last event, and
+  // final segments are accumulated separately from the transient
+  // in-progress (interim) segment so nothing gets counted twice.
   _recognition.onresult = (e) => {
-    let transcript = "";
-    for (let i=0;i<e.results.length;i++) transcript += e.results[i][0].transcript;
-    if (ta) ta.value = transcript;
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const chunk = e.results[i][0].transcript;
+      if (e.results[i].isFinal) _voiceFinalTranscript += chunk + " ";
+      else interim += chunk;
+    }
+    if (ta) ta.value = (_voiceFinalTranscript + interim).trim();
   };
   _recognition.onerror = (e) => {
     console.warn("[Karya] Speech recognition error:", e.error);
@@ -1903,7 +1925,7 @@ window.previewQuickAdd = function() {
 function showQuickAddPreview(parsed) {
   const team = getTeam();
   openModal(`
-    <div class="modal-hdr"><h2>Confirm Task</h2><button class="modal-x" onclick="closeModal()">✕</button></div>
+    <div class="modal-hdr"><h2>Confirm Task</h2><button class="modal-x" onclick="window.cancelQuickAdd()">✕</button></div>
     <div class="modal-body">
       ${parsed.warnings.length ? `<div style="background:#FFF3DC;color:#9A6700;padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:10px">⚠️ ${esc(parsed.warnings.join(" "))}</div>` : ""}
       <label class="flbl">Task Title</label>
