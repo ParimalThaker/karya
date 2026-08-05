@@ -79,6 +79,11 @@ a{color:var(--acc)}
 
 /* TASK CARD */
 .task-card{background:var(--card);border-radius:var(--r);padding:12px 10px 12px 12px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start;gap:9px;box-shadow:var(--sh);border-left:3px solid transparent;-webkit-transition:opacity .2s;transition:opacity .2s}
+.drag-handle{background:none;border:none;color:var(--mut);font-size:16px;cursor:grab;padding:4px 2px;touch-action:none;-webkit-user-select:none;-moz-user-select:none;user-select:none;-ms-flex-negative:0;flex-shrink:0;line-height:1}
+.reorder-lifted{opacity:.35}
+.reorder-ghost{position:fixed;pointer-events:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:.95;border-radius:var(--r)}
+.task-card.reorder-over-top{box-shadow:inset 0 3px 0 var(--acc)}
+.task-card.reorder-over-bottom{box-shadow:inset 0 -3px 0 var(--acc)}
 .task-card.overdue{border-left-color:#FF6B6B}
 .task-card.done-card{opacity:.55}
 .chk{width:26px;height:26px;border-radius:50%;border:3px solid #888;background:none;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;-webkit-transition:all .2s;transition:all .2s;-ms-flex-negative:0;flex-shrink:0;margin-top:1px;-webkit-tap-highlight-color:transparent}
@@ -124,6 +129,12 @@ body.glass-theme .matrix-card{background:rgba(255,255,255,.08);border-color:rgba
 .week-task{background:var(--card);border:1px solid var(--bdr);border-radius:5px;padding:3px 5px;margin-bottom:2px;font-size:10px;font-weight:600;color:var(--txt);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .week-task-lifted{opacity:.35}
 .week-task-ghost{position:fixed;pointer-events:none;z-index:9999;width:100px;box-shadow:0 6px 20px rgba(0,0,0,.3);transform:translate(-50%,-50%) rotate(-2deg);background:var(--card);border:1.5px solid var(--acc);border-radius:5px;padding:3px 5px;font-size:10px;font-weight:600;color:var(--txt)}
+.live-clock{margin-left:auto;font-weight:800;font-size:12px;color:var(--txt);white-space:nowrap}
+.week-edge-zone{position:fixed;top:0;bottom:0;width:58px;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:700;text-align:center;line-height:1.5;color:#fff;background:rgba(79,126,255,.4)}
+.week-edge-zone span{font-weight:400;font-size:8.5px;opacity:.85}
+.week-edge-left{left:0}
+.week-edge-right{right:0}
+.week-edge-zone.drag-over{background:rgba(79,126,255,.75)}
 .mic-btn{width:100%;margin-top:10px;padding:12px;border-radius:10px;border:1.5px solid var(--bdr);background:var(--card);color:var(--txt);font-size:14px;font-weight:700;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .mic-btn.recording{background:#FF6B6B;color:#fff;border-color:#FF6B6B;-webkit-animation:micPulse 1s infinite;animation:micPulse 1s infinite}
 @-webkit-keyframes micPulse{0%,100%{opacity:1}50%{opacity:.55}}
@@ -1003,6 +1014,7 @@ function recurLabel(recur) {
 // ── BOOT ─────────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
   console.log("[Karya] Build: 2026-06-21 v-member-filter-fix-2");
+  setInterval(updateLiveClock, 10000);
   // Platform detection: Windows desktop gets larger due-date text
   const ua = navigator.userAgent;
   const isAndroid = /Android/i.test(ua);
@@ -1169,6 +1181,15 @@ window.grantNotifPermission = async function() {
   } catch(e) { console.warn("Permission error:", e); }
 };
 
+function getDevicePlatform(ua) {
+  const s = ua || navigator.userAgent;
+  if (/Android/i.test(s)) return "android";
+  if (/Windows/i.test(s)) return "windows";
+  if (/iPhone|iPad|iPod/i.test(s)) return "ios";
+  if (/Mac OS/i.test(s)) return "mac";
+  return "other";
+}
+
 function getDeviceId() {
   // Stable per-browser ID, persisted in localStorage. Used so a device's
   // FCM token doc always overwrites the same doc even if the token itself
@@ -1193,19 +1214,26 @@ async function subscribeFCMToken(reg) {
     const deviceId = getDeviceId();
     const docId = S.user.id + "_" + deviceId;
     const thisUA = navigator.userAgent.slice(0, 80);
+    const thisPlatform = getDevicePlatform();
 
     // Clean up stale token docs from BEFORE this fix — the old doc ID scheme
     // was keyed by the token's own suffix, so a rotated FCM token created a
     // brand new doc instead of replacing the old one, and both stayed valid
-    // long enough to receive duplicate notifications. Only remove docs that
-    // match THIS device's browser fingerprint, so other real devices for the
-    // same person (e.g. Windows PC vs Android phone) are never touched.
+    // long enough to receive duplicate notifications.
+    // Bug fix: matching on the exact browser User-Agent string failed silently
+    // over time, since Chrome/Edge/Brave bump their version number in the UA
+    // string on every auto-update — so an old duplicate's stored UA drifted
+    // out of exact match with today's UA, and never got cleaned up. Matching
+    // on platform TYPE (Android vs Windows) instead is stable across browser
+    // updates, while still correctly leaving your OTHER real device alone.
     try {
       const q = query(collection(db, "karya_fcm_tokens"), where("userId", "==", S.user.id));
       const snap = await getDocs(q);
       const cleanups = [];
       snap.forEach(d => {
-        if (d.id !== docId && d.data().device === thisUA) {
+        const dd = d.data();
+        const docPlatform = dd.platform || getDevicePlatform(dd.device||"");
+        if (d.id !== docId && docPlatform === thisPlatform) {
           cleanups.push(deleteDoc(doc(db, "karya_fcm_tokens", d.id)));
         }
       });
@@ -1220,6 +1248,7 @@ async function subscribeFCMToken(reg) {
       userId:   S.user.id,
       userName: S.user.name,
       device:   thisUA,
+      platform: thisPlatform,
       ts:       serverTimestamp()
     });
     console.log("[Karya] FCM token stored for", S.user.name);
@@ -1257,6 +1286,7 @@ function render() {
   if (!S.user?.id){ app.innerHTML = buildUserSelect(); return; }
   app.innerHTML = buildMain();
   renderTaskArea(); updateStats();
+  updateLiveClock();
   document.onkeydown = e => { if(e.key==="Escape") closeModal(); };
 }
 
@@ -1362,8 +1392,21 @@ function isTaggedOn(t, name) {
   if (Array.isArray(t.subtasks) && t.subtasks.some(s=>s.assignee===name)) return true;
   return false;
 }
+// Rolling 30-day window: a task counts toward the score only if it was due
+// within the last 30 days (up to and including today). All-time done/total
+// would just climb toward 100% forever for anyone who's used the app a
+// while, since old completed tasks pile up but only recent ones can still
+// drag the score down — a rolling window keeps it reflecting recent
+// performance instead of lifetime history.
 function taggedTasksFor(name) {
-  return S.tasks.filter(t=>isTaggedOn(t,name));
+  const today = localDateStr(new Date());
+  const cutoffD = new Date(); cutoffD.setDate(cutoffD.getDate()-30);
+  const cutoff = localDateStr(cutoffD);
+  return S.tasks.filter(t=>{
+    if (!isTaggedOn(t,name)) return false;
+    if (!t.dueDate) return false;
+    return t.dueDate >= cutoff && t.dueDate <= today;
+  });
 }
 function isWinner(id) {
   const m = getMember(id); if (!m.name) return false;
@@ -1399,12 +1442,25 @@ function buildFilterBar() {
     + "<option value='medium'" + (S.filter==="medium"?" selected":"") + ">\uD83D\uDFE1 Medium</option>"
     + "<option value='low'" + (S.filter==="low"?" selected":"") + ">\uD83D\uDFE2 Low</option>"
     + "</select>"
-    + memberBtn;
+    + memberBtn
+    + "<span id='live-clock' class='live-clock'></span>";
+}
+
+function updateLiveClock() {
+  const el = document.getElementById("live-clock");
+  if (!el) return;
+  const now = new Date();
+  const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const monNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  let h = now.getHours(); const ap = h>=12?"PM":"AM"; h = h%12; if (h===0) h=12;
+  const m = String(now.getMinutes()).padStart(2,"0");
+  el.textContent = dayNames[now.getDay()]+", "+now.getDate()+" "+monNames[now.getMonth()]+" • "+h+":"+m+" "+ap;
 }
 
 function refreshFilterBar() {
   const el = document.getElementById("filter-bar-wrap");
   if (el) el.innerHTML = buildFilterBar();
+  updateLiveClock();
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────────
@@ -1505,13 +1561,11 @@ function renderTaskArea() {
     }
   }
 
-  tasks.sort((a,b)=>{
-    if(a.isFuture&&!b.isFuture) return 1;
-    if(!a.isFuture&&b.isFuture) return -1;
-    const da=a.dueDate?new Date(a.dueDate+"T"+(a.dueTime||"23:59")):new Date("2099");
-    const db2=b.dueDate?new Date(b.dueDate+"T"+(b.dueTime||"23:59")):new Date("2099");
-    return da-db2;
-  });
+  if (S.view==="mine" && !searchTerm) {
+    tasks = sortMyPending(tasks);
+  } else {
+    tasks.sort(dateSortCompare);
+  }
 
   const searchNotice = searchTerm
     ? `<div style="padding:6px 4px 10px;font-size:13px;color:var(--mut)">🔍 ${tasks.length} result${tasks.length===1?"":"s"} for "${esc(S.search.trim())}" — searching across all tabs</div>`
@@ -1521,6 +1575,30 @@ function renderTaskArea() {
     ? tasks.map(buildCard).join("")
     : `<div class="empty-state"><div class="empty-icon">📋</div><p>${searchTerm?"No tasks match your search":"No tasks here — tap ＋ to add one"}</p></div>`);
   renderAchievements();
+  if (S.view==="mine" && !searchTerm) attachReorderDragHandlers();
+}
+
+function dateSortCompare(a,b) {
+  if(a.isFuture&&!b.isFuture) return 1;
+  if(!a.isFuture&&b.isFuture) return -1;
+  const da=a.dueDate?new Date(a.dueDate+"T"+(a.dueTime||"23:59")):new Date("2099");
+  const db2=b.dueDate?new Date(b.dueDate+"T"+(b.dueTime||"23:59")):new Date("2099");
+  return da-db2;
+}
+
+// My Pending's manual drag order: purely visual, never touches dueDate/dueTime.
+// Tasks with a sortOrder set keep that exact order; any task without one yet
+// (e.g. newly created) falls to the end, sorted by date among themselves —
+// so a fresh task doesn't jump into the middle of an arrangement you made.
+function sortMyPending(tasks) {
+  return [...tasks].sort((a,b)=>{
+    const aHas = typeof a.sortOrder === "number";
+    const bHas = typeof b.sortOrder === "number";
+    if (aHas && bHas) return a.sortOrder - b.sortOrder;
+    if (aHas && !bHas) return -1;
+    if (!aHas && bHas) return 1;
+    return dateSortCompare(a,b);
+  });
 }
 
 // ── EISENHOWER MATRIX ──────────────────────────────────────────────
@@ -1540,15 +1618,17 @@ function renderMatrixView() {
 
   const mine = S.tasks.filter(t => !t.isPrivate && t.status!=="completed" && !t.isFuture && isAssigned(t,u));
 
-  const isUrgent = t => !!t.dueDate && t.dueDate <= todayStr; // YYYY-MM-DD strings compare correctly
+  const isOverdue = t => !!t.dueDate && t.dueDate < todayStr;
+  const isDueToday = t => !!t.dueDate && t.dueDate === todayStr;
   const isImportant = t => t.priority === "high";
 
   const quads = { doFirst:[], schedule:[], delegate:[], later:[] };
   mine.forEach(t=>{
-    const urgent = isUrgent(t), important = isImportant(t);
-    if (urgent && important) quads.doFirst.push(t);
-    else if (!urgent && important) quads.schedule.push(t);
-    else if (urgent && !important) quads.delegate.push(t);
+    const overdue = isOverdue(t), dueToday = isDueToday(t), important = isImportant(t);
+    if (overdue) quads.doFirst.push(t); // overdue always stays Do First, regardless of priority
+    else if (dueToday && important) quads.doFirst.push(t);
+    else if (dueToday && !important) quads.delegate.push(t);
+    else if (!dueToday && important) quads.schedule.push(t);
     else quads.later.push(t);
   });
 
@@ -1701,6 +1781,7 @@ function onWeekTaskPointerDown(e) {
     ghost.style.left = startX+"px";
     ghost.style.top  = startY+"px";
     document.body.appendChild(ghost);
+    createWeekEdgeZones();
   }, 350);
 
   function onMove(ev) {
@@ -1710,18 +1791,25 @@ function onWeekTaskPointerDown(e) {
       return;
     }
     if (ghost) { ghost.style.left=ev.clientX+"px"; ghost.style.top=ev.clientY+"px"; }
-    document.querySelectorAll(".week-slot.drag-over").forEach(s=>s.classList.remove("drag-over"));
+    document.querySelectorAll(".week-slot.drag-over, .week-edge-zone.drag-over").forEach(s=>s.classList.remove("drag-over"));
     const under = document.elementFromPoint(ev.clientX, ev.clientY);
+    const edgeZone = under ? under.closest(".week-edge-zone") : null;
     const slot = under ? under.closest(".week-slot") : null;
-    if (slot) slot.classList.add("drag-over");
+    if (edgeZone) edgeZone.classList.add("drag-over");
+    else if (slot) slot.classList.add("drag-over");
   }
 
   function onUp(ev) {
     clearTimeout(longPressTimer);
     if (dragging) {
       const under = document.elementFromPoint(ev.clientX, ev.clientY);
+      const edgeZone = under ? under.closest(".week-edge-zone") : null;
       const slot = under ? under.closest(".week-slot") : null;
-      if (slot) window.rescheduleTask(taskId, slot.dataset.date, slot.dataset.hour);
+      if (edgeZone) {
+        window.rescheduleTaskByWeeks(taskId, edgeZone.id==="week-edge-next" ? 1 : -1);
+      } else if (slot) {
+        window.rescheduleTask(taskId, slot.dataset.date, slot.dataset.hour);
+      }
     }
     cleanup();
   }
@@ -1733,12 +1821,45 @@ function onWeekTaskPointerDown(e) {
     document.querySelectorAll(".week-slot.drag-over").forEach(s=>s.classList.remove("drag-over"));
     srcEl.classList.remove("week-task-lifted");
     if (ghost) ghost.remove();
+    removeWeekEdgeZones();
   }
 
   document.addEventListener("pointermove", onMove);
   document.addEventListener("pointerup", onUp);
   document.addEventListener("pointercancel", onUp);
 }
+
+function createWeekEdgeZones() {
+  if (document.getElementById("week-edge-prev")) return;
+  const left = document.createElement("div");
+  left.id = "week-edge-prev"; left.className = "week-edge-zone week-edge-left";
+  left.innerHTML = "◀<br>Prev Week<br><span>same day &amp; time</span>";
+  const right = document.createElement("div");
+  right.id = "week-edge-next"; right.className = "week-edge-zone week-edge-right";
+  right.innerHTML = "▶<br>Next Week<br><span>same day &amp; time</span>";
+  document.body.appendChild(left);
+  document.body.appendChild(right);
+}
+function removeWeekEdgeZones() {
+  document.getElementById("week-edge-prev")?.remove();
+  document.getElementById("week-edge-next")?.remove();
+}
+
+window.rescheduleTaskByWeeks = async function(taskId, weekDelta) {
+  const t = S.tasks.find(x=>x.id===taskId); if (!t || !t.dueDate) return;
+  const d = new Date(t.dueDate+"T00:00:00");
+  d.setDate(d.getDate() + weekDelta*7);
+  const newDate = localDateStr(d);
+  if (S.fbReady && db) {
+    await updateDoc(doc(db,"karya_tasks",taskId), {dueDate:newDate});
+  } else {
+    t.dueDate = newDate; saveLocal();
+  }
+  t.dueDate = newDate; // instant local feedback
+  await addLog("reschedule", `"${t.title}" moved to ${newDate} (same time, ${weekDelta>0?"next":"previous"} week)`);
+  renderWeekView();
+  showToast(weekDelta>0 ? "📅 Moved to next week" : "📅 Moved to previous week");
+};
 
 window.rescheduleTask = async function(taskId, newDate, newHour) {
   const t = S.tasks.find(x=>x.id===taskId); if (!t) return;
@@ -1769,7 +1890,9 @@ function buildCard(t) {
     return `<span class="assignee-pill" style="background:${m?m.color:"#888"}"><span class="ap-dot"></span>${esc(n.split(" ")[0])}</span>`;
   }).join("");
   const snoozeCnt = t.snoozeCount||0;
+  const showDragHandle = (S.view==="mine" && !(S.search||"").trim());
   return `<div class="task-card ${overdue?"overdue":""} ${t.status==="completed"?"done-card":""}" data-task-id="${t.id}">
+    ${showDragHandle?`<button class="drag-handle" data-task-id="${t.id}">⠿</button>`:""}
     <button class="chk ${t.status==="completed"?"done":""}" onclick="window.toggleTask('${t.id}')">
       ${t.status==="completed"?"✓":""}
     </button>
@@ -1807,6 +1930,116 @@ function buildSubtaskBlock(t) {
       <div class="subtask-list">${rows}</div>
     </div>`;
 }
+
+// ── MY PENDING: DRAG-TO-REORDER (visual sort only) ──────────────────
+// Never touches dueDate/dueTime — purely changes each task's sortOrder
+// field, which only affects display order in the My Pending tab.
+function attachReorderDragHandlers() {
+  document.querySelectorAll(".drag-handle").forEach(el=>{
+    el.addEventListener("pointerdown", onReorderPointerDown);
+  });
+}
+
+function onReorderPointerDown(e) {
+  e.stopPropagation();
+  const taskId = e.currentTarget.dataset.taskId;
+  const card = e.currentTarget.closest(".task-card");
+  if (!card) return;
+  const startX = e.clientX, startY = e.clientY;
+  let dragging = false, ghost = null;
+
+  const longPressTimer = setTimeout(()=>{
+    dragging = true;
+    card.classList.add("reorder-lifted");
+    const rect = card.getBoundingClientRect();
+    ghost = card.cloneNode(true);
+    ghost.classList.add("reorder-ghost");
+    ghost.style.width = rect.width+"px";
+    ghost.style.left  = rect.left+"px";
+    ghost.style.top   = rect.top+"px";
+    document.body.appendChild(ghost);
+  }, 300);
+
+  function clearOverClasses() {
+    document.querySelectorAll(".task-card.reorder-over-top,.task-card.reorder-over-bottom").forEach(c=>c.classList.remove("reorder-over-top","reorder-over-bottom"));
+  }
+
+  function onMove(ev) {
+    if (!dragging) {
+      const dx=Math.abs(ev.clientX-startX), dy=Math.abs(ev.clientY-startY);
+      if (dx>10||dy>10) { clearTimeout(longPressTimer); cleanup(); }
+      return;
+    }
+    if (ghost) {
+      const rect = card.getBoundingClientRect();
+      ghost.style.top = (ev.clientY - (startY-rect.top)) + "px";
+    }
+    clearOverClasses();
+    const under = document.elementFromPoint(ev.clientX, ev.clientY);
+    const targetCard = under ? under.closest(".task-card") : null;
+    if (targetCard && targetCard !== card) {
+      const trect = targetCard.getBoundingClientRect();
+      const isTopHalf = ev.clientY < trect.top + trect.height/2;
+      targetCard.classList.add(isTopHalf ? "reorder-over-top" : "reorder-over-bottom");
+    }
+  }
+
+  function onUp(ev) {
+    clearTimeout(longPressTimer);
+    if (dragging) {
+      const under = document.elementFromPoint(ev.clientX, ev.clientY);
+      const targetCard = under ? under.closest(".task-card") : null;
+      if (targetCard && targetCard !== card) {
+        const trect = targetCard.getBoundingClientRect();
+        const isTopHalf = ev.clientY < trect.top + trect.height/2;
+        window.reorderMyPending(taskId, targetCard.dataset.taskId, isTopHalf?"before":"after");
+      }
+    }
+    cleanup();
+  }
+
+  function cleanup() {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+    document.removeEventListener("pointercancel", onUp);
+    clearOverClasses();
+    card.classList.remove("reorder-lifted");
+    if (ghost) ghost.remove();
+  }
+
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onUp);
+  document.addEventListener("pointercancel", onUp);
+}
+
+window.reorderMyPending = async function(draggedId, targetId, position) {
+  if (draggedId === targetId) return;
+  const u = S.user; if (!u) return;
+  let mine = S.tasks.filter(t=>!t.isPrivate && t.status!=="completed" && isAssigned(t,u));
+  mine = sortMyPending(mine); // same order the list is currently displayed in
+
+  const ids = mine.map(t=>t.id);
+  const fromIdx = ids.indexOf(draggedId);
+  if (fromIdx===-1) return;
+  ids.splice(fromIdx,1);
+  let toIdx = ids.indexOf(targetId);
+  if (toIdx===-1) return;
+  if (position==="after") toIdx += 1;
+  ids.splice(toIdx,0,draggedId);
+
+  const writes = [];
+  ids.forEach((id,i)=>{
+    const t = S.tasks.find(x=>x.id===id); if (!t) return;
+    const newOrder = (i+1)*10;
+    if (t.sortOrder !== newOrder) {
+      t.sortOrder = newOrder; // instant local feedback
+      if (S.fbReady && db) writes.push(updateDoc(doc(db,"karya_tasks",id), {sortOrder:newOrder}));
+    }
+  });
+  if (!S.fbReady || !db) saveLocal();
+  renderTaskArea();
+  try { await Promise.all(writes); } catch(e) { console.warn("[Karya] Reorder save error:", e); }
+};
 
 function updateStats() {
   const u=S.user; if(!u) return;
