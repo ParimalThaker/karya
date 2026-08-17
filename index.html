@@ -130,6 +130,30 @@ body.glass-theme .matrix-card{background:rgba(255,255,255,.08);border-color:rgba
 .week-task-lifted{opacity:.35}
 .week-task-ghost{position:fixed;pointer-events:none;z-index:9999;width:100px;box-shadow:0 6px 20px rgba(0,0,0,.3);transform:translate(-50%,-50%) rotate(-2deg);background:var(--card);border:1.5px solid var(--acc);border-radius:5px;padding:3px 5px;font-size:10px;font-weight:600;color:var(--txt)}
 .live-clock{margin-left:auto;font-weight:800;font-size:12px;color:var(--txt);white-space:nowrap}
+.plan-wrap{display:flex;flex-direction:column}
+.plan-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.plan-count{font-size:12px;font-weight:800;color:var(--mut);letter-spacing:.4px}
+.plan-bar{height:5px;border-radius:99px;background:var(--bdr);overflow:hidden;margin-bottom:16px}
+.plan-bar-fill{height:100%;background:var(--acc);border-radius:99px;transition:width .3s}
+.plan-body{margin-bottom:18px}
+.plan-due{display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px;margin-bottom:10px}
+.plan-due.late{background:#FEE2E2;color:#B91C1C}
+.plan-due.today{background:#DBEAFE;color:#1D4ED8}
+.plan-title{font-size:22px;font-weight:800;line-height:1.3;color:var(--txt);margin-bottom:10px}
+.plan-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:12px;color:var(--mut)}
+.plan-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.plan-sub{font-size:11px}
+.plan-desc{margin-top:10px;font-size:13px;color:var(--mut);line-height:1.5;max-height:90px;overflow-y:auto}
+.plan-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.plan-btn{padding:13px 8px;border-radius:10px;border:1.5px solid var(--bdr);background:var(--card);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer}
+.plan-done{background:#00C896;color:#fff;border-color:#00C896}
+.plan-today{background:var(--acc);color:#fff;border-color:var(--acc)}
+.plan-tom{background:#FFB347;color:#fff;border-color:#FFB347}
+.plan-skip{width:100%;background:none;border:none;color:var(--mut);font-size:12px;padding:6px;cursor:pointer;text-decoration:underline}
+body.glass-theme .plan-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15)}
+body.glass-theme .plan-done{background:#00C896;border-color:#00C896}
+body.glass-theme .plan-today{background:var(--acc);border-color:var(--acc)}
+body.glass-theme .plan-tom{background:#FFB347;border-color:#FFB347}
 .week-edge-zone{position:fixed;top:0;bottom:0;width:58px;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:700;text-align:center;line-height:1.5;color:#fff;background:rgba(79,126,255,.4)}
 .week-edge-zone span{font-weight:400;font-size:8.5px;opacity:.85}
 .week-edge-left{left:0}
@@ -748,8 +772,10 @@ body.glass-theme .img-drop {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
-         onSnapshot, serverTimestamp, query, orderBy, where, getDocs }
+         onSnapshot, serverTimestamp, query, orderBy, where, getDocs, limit }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 import { getMessaging, getToken, onMessage }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
@@ -767,6 +793,10 @@ const FB_CONFIG = {
 
 // ── CONSTANTS ────────────────────────────────────────────────────
 const APP_PW      = "krishna";
+// App Check (see setup notes in the init block below). Leave as the
+// placeholder to keep App Check disabled.
+const RECAPTCHA_SITE_KEY = "PASTE_RECAPTCHA_SITE_KEY";
+const APPCHECK_DEBUG     = false;  // true ONLY when testing on localhost
 const SESSION_HRS = 12;
 const MEMBER_COLORS = ["#E8720C","#4F7EFF","#C47AC0","#00C896","#FF6B6B","#FFB347","#7E57C2","#26C6DA","#EF5350","#66BB6A"];
 
@@ -845,9 +875,231 @@ function buildTimePicker(id, val24) {
 }
 // ── END TIME PICKER ───────────────────────────────────────────────
 
+
+let _planBootDone = false;
+
+function isModalOpen() {
+  const el = document.getElementById("modal-overlay");
+  return !!el && !el.classList.contains("hidden");
+}
+
+function checkPlanTriggers() {
+  if (!S.user || !S.authed) return;
+  // Opened from a digest notification tap -> always show, ignore once-a-day
+  const params = new URLSearchParams(location.search);
+  if (params.get("plan") === "1") {
+    history.replaceState({}, "", location.pathname);
+    localStorage.setItem("karya_plan_" + planTodayStr(), "1");
+    window.openPlanMyDay(true);
+    return;
+  }
+  maybeAutoOpenPlan();
+}
+
+// If the app is already open (foreground or a backgrounded tab) when the day
+// rolls over or the trigger time passes, surface the deck without needing the
+// notification to be tapped. Browsers cannot force a CLOSED app onto screen —
+// that is a platform security boundary — so returning to the tab is the hook.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && S.authed && S.user && !isModalOpen()) {
+    checkPlanTriggers();
+  }
+});
+setInterval(() => {
+  if (document.visibilityState === "visible" && S.authed && S.user && !isModalOpen()) {
+    checkPlanTriggers();
+  }
+}, 300000); // every 5 min; maybeAutoOpenPlan's once-a-day key prevents repeats
+
+
+// ══ PLAN MY DAY ══════════════════════════════════════════════════
+// Todoist-style guided deck: one task at a time, decide Today /
+// Tomorrow / Later / Done / Skip. Auto-opens once per day on first
+// app open (only when there is something to decide); also reachable
+// any time from the ☀️ Plan button. Never a forced wall — always ✕.
+let _planQueue = [], _planIdx = 0, _planDecided = 0;
+
+function planTodayStr() { return localDateStr(new Date()); }
+
+function buildPlanQueue() {
+  const u = S.user; if (!u) return [];
+  const today = planTodayStr();
+  const mine = S.tasks.filter(t =>
+    !t.isPrivate && t.status !== "completed" && !t.isFuture &&
+    isAssigned(t, u) && t.dueDate && t.dueDate <= today
+  );
+  // Overdue first (oldest first), then today's — most stale decided first
+  return mine.sort((a,b)=>{
+    const ao = a.dueDate < today, bo = b.dueDate < today;
+    if (ao !== bo) return ao ? -1 : 1;
+    if (a.dueDate !== b.dueDate) return a.dueDate < b.dueDate ? -1 : 1;
+    return (a.dueTime||"23:59") < (b.dueTime||"23:59") ? -1 : 1;
+  });
+}
+
+window.openPlanMyDay = function(manual) {
+  const q = buildPlanQueue();
+  if (!q.length) {
+    if (manual) showToast("🎉 Nothing overdue or due today — you're clear!");
+    return false;
+  }
+  _planQueue = q; _planIdx = 0; _planDecided = 0;
+  renderPlanCard();
+  return true;
+};
+
+function maybeAutoOpenPlan() {
+  // Once per calendar day, per device
+  const key = "karya_plan_" + planTodayStr();
+  if (localStorage.getItem(key)) return;
+  const opened = window.openPlanMyDay(false);
+  if (opened) localStorage.setItem(key, "1");
+}
+
+function daysOverdueLabel(t) {
+  const today = planTodayStr();
+  if (t.dueDate === today) return "<span class='plan-due today'>Due today</span>";
+  const d1 = new Date(t.dueDate+"T00:00:00"), d2 = new Date(today+"T00:00:00");
+  const n = Math.round((d2-d1)/86400000);
+  return "<span class='plan-due late'>" + n + " day" + (n===1?"":"s") + " overdue</span>";
+}
+
+function renderPlanCard() {
+  if (_planIdx >= _planQueue.length) { finishPlan(); return; }
+  const t = _planQueue[_planIdx];
+  const live = S.tasks.find(x=>x.id===t.id);
+  if (!live || live.status === "completed") { _planIdx++; renderPlanCard(); return; }
+
+  const total = _planQueue.length;
+  const pctBar = Math.round((_planIdx/total)*100);
+  const names = Array.isArray(live.assignedTo)?live.assignedTo:[live.assignedTo];
+  const others = names.filter(n=>n!==S.user.name && n!=="Everyone");
+  const subs = Array.isArray(live.subtasks)?live.subtasks:[];
+  const subDone = subs.filter(x=>x.done).length;
+  const prio = {high:"#FF6B6B",medium:"#FFB347",low:"#00C896"}[live.priority]||"#aaa";
+
+  openModal([
+    "<div class='plan-wrap'>",
+    "  <div class='plan-head'>",
+    "    <div class='plan-count'>" + (_planIdx+1) + " of " + total + "</div>",
+    "    <button class='modal-x' onclick='window.closePlan()'>\u2715</button>",
+    "  </div>",
+    "  <div class='plan-bar'><div class='plan-bar-fill' style='width:" + pctBar + "%'></div></div>",
+    "  <div class='plan-body'>",
+    "    " + daysOverdueLabel(live),
+    "    <div class='plan-title'>" + esc(live.title) + "</div>",
+    "    <div class='plan-meta'>",
+    "      <span class='plan-dot' style='background:" + prio + "'></span>",
+    "      <span>" + (live.priority||"medium") + " priority</span>",
+    (subs.length ? "      <span class='plan-sub'>\u2705 " + subDone + "/" + subs.length + " steps</span>" : ""),
+    (others.length ? "      <span class='plan-sub'>\uD83D\uDC65 with " + esc(others.join(", ")) + "</span>" : ""),
+    "    </div>",
+    (live.description ? "    <div class='plan-desc'>" + esc(live.description) + "</div>" : ""),
+    "  </div>",
+    "  <div class='plan-actions'>",
+    "    <button class='plan-btn plan-done' onclick='window.planDecide(\"done\")'>\u2705 Done</button>",
+    "    <button class='plan-btn plan-today' onclick='window.planDecide(\"today\")'>\uD83D\uDCC5 Today</button>",
+    "    <button class='plan-btn plan-tom' onclick='window.planDecide(\"tomorrow\")'>\u27A1\uFE0F Tomorrow</button>",
+    "    <button class='plan-btn plan-later' onclick='window.planDecide(\"later\")'>\uD83D\uDDD3\uFE0F Later\u2026</button>",
+    "  </div>",
+    "  <button class='plan-skip' onclick='window.planDecide(\"skip\")'>Skip \u2014 decide later</button>",
+    "</div>"
+  ].join(""));
+}
+
+window.planDecide = async function(choice) {
+  const t = _planQueue[_planIdx];
+  if (!t) { renderPlanCard(); return; }
+
+  if (choice === "skip") { _planIdx++; renderPlanCard(); return; }
+
+  if (choice === "done") {
+    _planIdx++; _planDecided++;
+    await window.toggleTask(t.id);   // full normal completion path
+    setTimeout(renderPlanCard, 900); // let confetti/toast breathe
+    return;
+  }
+
+  if (choice === "later") { renderPlanLaterPicker(t); return; }
+
+  const d = new Date();
+  if (choice === "tomorrow") d.setDate(d.getDate()+1);
+  await applyPlanDate(t, localDateStr(d));
+};
+
+function renderPlanLaterPicker(t) {
+  const min = localDateStr(new Date());
+  const def = new Date(); def.setDate(def.getDate()+7);
+  openModal([
+    "<div class='plan-wrap'>",
+    "  <div class='plan-head'><div class='plan-count'>Pick a date</div>",
+    "  <button class='modal-x' onclick='window.closePlan()'>\u2715</button></div>",
+    "  <div class='plan-body'>",
+    "    <div class='plan-title' style='font-size:18px'>" + esc(t.title) + "</div>",
+    "    <label class='flbl'>Move to</label>",
+    "    <input id='plan-later-date' type='date' class='field-input' min='" + min + "' value='" + localDateStr(def) + "'>",
+    "  </div>",
+    "  <div class='plan-actions'>",
+    "    <button class='plan-btn plan-later' onclick='window.planLaterBack()'>\u2190 Back</button>",
+    "    <button class='plan-btn plan-today' onclick='window.planLaterConfirm()'>\u2713 Move</button>",
+    "  </div>",
+    "</div>"
+  ].join(""));
+}
+
+window.planLaterBack = function() { renderPlanCard(); };
+
+window.planLaterConfirm = async function() {
+  const t = _planQueue[_planIdx]; if (!t) return;
+  const v = document.getElementById("plan-later-date")?.value;
+  if (!v) return;
+  await applyPlanDate(t, v);
+};
+
+async function applyPlanDate(t, newDate) {
+  // Clears this person's stale snooze override — a fresh decision about
+  // when the task is due should not be pre-empted by an old snooze time.
+  const userReminders = Object.assign({}, t.userReminders||{});
+  delete userReminders[S.user.name];
+  const upd = { dueDate:newDate, userReminders,
+                remindUntil: remindUntilDate(userReminders, newDate) };
+  try {
+    if (S.fbReady && db) await updateDoc(doc(db,"karya_tasks",t.id), upd);
+    const i = S.tasks.findIndex(x=>x.id===t.id);
+    if (i>-1) S.tasks[i] = Object.assign({}, S.tasks[i], upd);
+    if (!S.fbReady || !db) saveLocal();
+    _scheduled.delete(t.id);
+    scheduleReminder(Object.assign({}, S.tasks[i>-1?i:0], upd, {id:t.id}));
+    await addLog("reschedule", '"' + t.title + '" \u2192 ' + newDate + " (Plan My Day)");
+  } catch(e) {
+    console.error("[Karya] Plan reschedule failed:", e);
+    showToast("\u26A0\uFE0F Couldn't move that one \u2014 try again");
+    return;
+  }
+  _planIdx++; _planDecided++;
+  renderPlanCard();
+}
+
+window.closePlan = function() {
+  closeModal();
+  _planQueue = []; _planIdx = 0;
+  renderTaskArea(); updateStats();
+};
+
+function finishPlan() {
+  const n = _planDecided;
+  closeModal();
+  renderTaskArea(); updateStats();
+  if (n > 0) { showConfetti(); showToast("\u2600\uFE0F Day planned \u2014 " + n + " sorted!"); }
+};
+
 // ── HANDLE SW POSTMESSAGE (notification click → show reminder) ──
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.addEventListener("message", function(event) {
+    if (event.data && event.data.type === "SHOW_PLAN") {
+      window.openPlanMyDay(true);
+      return;
+    }
     if (event.data && event.data.type === "SHOW_REMINDER") {
       const taskId = event.data.taskId;
       if (taskId) {
@@ -1067,6 +1319,31 @@ function clearSession() {
 function initFirebase() {
   try {
     const app = initializeApp(FB_CONFIG);
+
+    // ── APP CHECK ──────────────────────────────────────────────────
+    // Proves requests come from THIS deployed app before Firestore will
+    // answer. Without it, anyone who views this page's source can read the
+    // Firebase config and then read/edit/delete every task with a simple
+    // script, bypassing the app entirely. No login required for the team —
+    // it is invisible to them.
+    // Paste the reCAPTCHA site key from Firebase Console > App Check below.
+    // While it stays as the placeholder, App Check stays OFF and the app
+    // behaves exactly as before, so this is safe to deploy before setup.
+    if (RECAPTCHA_SITE_KEY && RECAPTCHA_SITE_KEY !== "PASTE_RECAPTCHA_SITE_KEY") {
+      try {
+        if (APPCHECK_DEBUG) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        initializeAppCheck(app, {
+          provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_SITE_KEY),
+          isTokenAutoRefreshEnabled: true
+        });
+        console.log("[Karya] App Check active");
+      } catch(e) {
+        console.warn("[Karya] App Check init failed (app still works):", e);
+      }
+    } else {
+      console.log("[Karya] App Check not configured — skipping");
+    }
+
     db = getFirestore(app);
     S.fbReady = true;
     onSnapshot(query(collection(db,"karya_tasks"), orderBy("createdAt","desc")), snap => {
@@ -1074,8 +1351,16 @@ function initFirebase() {
       renderTaskArea(); updateStats();
       // Re-schedule reminders on every data update (covers page reload)
       rescheduleAllReminders();
+      // First snapshot only: tasks are now loaded, so the Plan deck can be
+      // built accurately. Later snapshots must not re-trigger it mid-session.
+      if (!_planBootDone) {
+        _planBootDone = true;
+        setTimeout(checkPlanTriggers, 900);
+      }
     });
-    onSnapshot(query(collection(db,"karya_logs"), orderBy("ts","desc")), snap => {
+    // COST: no limit meant every app open re-read the ENTIRE log history, which
+    // grows forever. The UI only ever shows recent activity.
+    onSnapshot(query(collection(db,"karya_logs"), orderBy("ts","desc"), limit(200)), snap => {
       S.logs = snap.docs.map(d=>({id:d.id,...d.data()}));
     });
     try {
@@ -1262,6 +1547,7 @@ function loadLocal() {
   rescheduleAllReminders();
   checkUrlReminder();
   setTimeout(checkDismissedReminders, 1200);
+  if (!_planBootDone) { _planBootDone = true; setTimeout(checkPlanTriggers, 900); }
 }
 function saveLocal() {
   localStorage.setItem("k_tasks", JSON.stringify(S.tasks));
@@ -1500,6 +1786,7 @@ function buildMain() {
         style="flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--bdr);background:var(--card);color:var(--txt);font-size:14px">`}
       <button class="btn-secondary" style="white-space:nowrap;padding:9px 14px;font-size:13px" onclick="window.toggleMatrixView()">${S.matrixMode?"← List":"📊 Matrix"}</button>
       <button class="btn-secondary" style="white-space:nowrap;padding:9px 14px;font-size:13px" onclick="window.toggleWeekView()">${S.weekMode?"← List":"📅 Week"}</button>
+      <button class="btn-secondary" style="white-space:nowrap;padding:9px 14px;font-size:13px" onclick="window.openPlanMyDay(true)">☀️ Plan</button>
     </div>
     <div class="task-list" id="task-list"></div>
     <div class="achieve-wrap" id="achieve-wrap">
@@ -2395,6 +2682,7 @@ window.confirmQuickAdd = async function() {
     isFuture:false,
     isPrivate:false,
     recur:null,
+    remindUntil:dueDate,
     status:"pending", createdBy:S.user.name,
     createdAt:new Date().toISOString(),
     image:null
@@ -2574,6 +2862,7 @@ window.createTask = async function() {
     isFuture:document.getElementById("ct-future")?.checked||false,
     isPrivate:S.user?.isAdmin&&document.getElementById("ct-private")?.checked||false,
     recur: getRecurConfig("ct"),
+    remindUntil: dueDate,
     subtasks: getSubtasksFromForm("ct"),
     status:"pending", createdBy:S.user.name,
     createdAt:new Date().toISOString(),
@@ -3068,6 +3357,33 @@ window.showNotifs = function() {
 // ── REMINDER ENGINE ───────────────────────────────────────────────
 const _scheduled = new Set(); // track task IDs already scheduled this session
 
+// Latest date on which a reminder could still be needed for this task:
+// max(dueDate, every personal snooze date). Using the MINIMUM here was a bug —
+// for a long-overdue task that someone snoozed to tomorrow, the minimum is the
+// ancient dueDate, which falls outside the query window and the reminder is
+// silently never sent. The maximum correctly keeps such a task discoverable.
+function remindUntilDate(userReminders, dueDate) {
+  const dates = Object.values(userReminders || {})
+    .filter(v => typeof v === "string" && v.indexOf("T") > 0)
+    .map(v => v.split("T")[0]);
+  if (dueDate) dates.push(dueDate);
+  if (!dates.length) return null;
+  return dates.sort()[dates.length - 1];
+}
+
+function myRemindAt(t, userName) {
+  // A person's own snooze (userReminders[name], an IST wall-clock string)
+  // overrides the task's shared reminder time. Falls back to the task's
+  // dueDate/dueTime minus its reminder offset when no personal override.
+  const ovr = t.userReminders && t.userReminders[userName];
+  if (ovr && typeof ovr === "string" && ovr.indexOf("T") > 0) return new Date(ovr);
+  if (!t.dueDate) return null;
+  const due = new Date(t.dueDate+"T"+(t.dueTime||"23:59"));
+  if (!t.reminder || t.reminder==="ontime") return due;
+  if (t.reminder==="") return null;
+  return new Date(due.getTime()-parseInt(t.reminder)*60000);
+}
+
 function rescheduleAllReminders() {
   // Called on every data load/reload — re-arms pending reminders
   // ONLY schedules tasks assigned to the currently logged-in user
@@ -3077,12 +3393,8 @@ function rescheduleAllReminders() {
     // Skip tasks not assigned to the logged-in user
     const assignees = Array.isArray(t.assignedTo) ? t.assignedTo : [t.assignedTo||"Everyone"];
     if (!assignees.includes("Everyone") && !assignees.includes(S.user.name)) return;
-    const due=new Date(t.dueDate+"T"+(t.dueTime||"23:59"));
-    let remindAt;
-    if (!t.reminder || t.reminder==="ontime") remindAt=due;
-    else if (t.reminder==="") return;
-    else remindAt=new Date(due.getTime()-parseInt(t.reminder)*60000);
-    if (remindAt > new Date()) {
+    const remindAt = myRemindAt(t, S.user.name);
+    if (remindAt && remindAt > new Date()) {
       _doSchedule(t, remindAt);
       _scheduled.add(t.id);
     }
@@ -3096,12 +3408,8 @@ function scheduleReminder(task) {
     const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo||"Everyone"];
     if (!assignees.includes("Everyone") && !assignees.includes(S.user.name)) return;
   }
-  const due=new Date(task.dueDate+"T"+(task.dueTime||"23:59"));
-  let remindAt;
-  if (!task.reminder || task.reminder==="ontime") remindAt=due;
-  else if (task.reminder==="") return;
-  else remindAt=new Date(due.getTime()-parseInt(task.reminder)*60000);
-  if (remindAt <= new Date()) return;
+  const remindAt = S.user ? myRemindAt(task, S.user.name) : null;
+  if (!remindAt || remindAt <= new Date()) return;
   _scheduled.delete(task.id); // allow rescheduling
   _doSchedule(task, remindAt);
   _scheduled.add(task.id);
@@ -3230,16 +3538,25 @@ window.snoozeTask = async function(id, mins, btn) {
   if (!id) { btn.closest(".big-notif-overlay").remove(); return; }
   const t=S.tasks.find(x=>x.id===id);
   if (!t) { btn.closest(".big-notif-overlay").remove(); return; }
-  const currentDue=t.dueDate?new Date(t.dueDate+"T"+(t.dueTime||"23:59")):new Date();
+  // Snooze is measured from NOW, not from the original due date. Snoozing an
+  // already-overdue task off its old due date landed the new reminder in the
+  // past, which made it re-fire immediately.
+  const base=new Date();
   let newDue;
-  if (mins==="tomorrow") { newDue=new Date(currentDue); newDue.setDate(newDue.getDate()+1); newDue.setHours(9,0,0,0); }
-  else newDue=new Date(currentDue.getTime()+mins*60000);
-  const newDate=newDue.toISOString().split("T")[0];
+  if (mins==="tomorrow") { newDue=new Date(base); newDue.setDate(newDue.getDate()+1); newDue.setHours(9,0,0,0); }
+  else newDue=new Date(base.getTime()+mins*60000);
+  const newDate=localDateStr(newDue);  // localDateStr, not toISOString (UTC shift bug)
   const newTime=newDue.toTimeString().slice(0,5);
   const label=mins==="tomorrow"?"Tomorrow 9am":`+${mins>=60?(mins/60)+"hr":mins+"min"}`;
   const snoozeLog=Array.isArray(t.snoozeLog)?[...t.snoozeLog]:[];
   snoozeLog.push({ user:S.user.name, mins, label, ts:new Date().toISOString() });
-  const upd={ dueDate:newDate, dueTime:newTime, snoozed:true, snoozeCount:snoozeLog.length, snoozeLog, reminder:"ontime" };
+  // PER-USER: only shifts this person's own reminder. dueDate/dueTime is the
+  // task's shared deadline and is deliberately left untouched, so one
+  // assignee snoozing no longer moves everyone else's reminder.
+  const userReminders=Object.assign({}, t.userReminders||{});
+  userReminders[S.user.name]=newDate+"T"+newTime;
+  const upd={ userReminders, remindUntil:remindUntilDate(userReminders,t.dueDate),
+              snoozed:true, snoozeCount:snoozeLog.length, snoozeLog };
   if (S.fbReady&&db) { await updateDoc(doc(db,"karya_tasks",id),upd); }
   else { const i=S.tasks.findIndex(x=>x.id===id); if(i>-1) S.tasks[i]={...S.tasks[i],...upd}; saveLocal(); renderTaskArea(); updateStats(); }
   _scheduled.delete(id);
@@ -3348,12 +3665,27 @@ function playWinnerChime() {
 
 let _winnerShownFor = {}; // prevent repeated celebrations
 
+function isoWeekKey(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+  return date.getUTCFullYear() + "-W" + String(weekNo).padStart(2,"0");
+}
+
 function checkWinnerCelebration() {
-  // Show 90% celebration to ALL users, but only ONCE per milestone per member
-  // Key = memberId_doneCount so each new milestone (re-crossing 90%) triggers once more
-  // Uses localStorage to track which celebrations this user has already seen
+  // Show 90% celebration to ALL users, but only ONCE per week per member.
+  // Bug fix: this used to key on the member's done-count, which worked fine
+  // when that count only ever grew (all-time). Since the score is now a
+  // rolling 30-day window, the count can rise AND fall as old tasks roll out
+  // of the window — so the same count can recur months apart, and keying on
+  // it would silently suppress a genuinely new 90% moment. Keying on the
+  // calendar week instead means: still 90%+ this week -> can celebrate again
+  // once, regardless of the exact number.
   if (!S.user) return;
   const team = getTeam();
+  const weekKey = isoWeekKey(new Date());
   team.forEach(m => {
     const assigned = taggedTasksFor(m.name);
     if (assigned.length < 3) return;
@@ -3361,7 +3693,7 @@ function checkWinnerCelebration() {
     const pct  = Math.round(done.length / assigned.length * 100);
     if (pct < 90) return;
     // Key includes viewer's id so each user tracks their own "seen" state independently
-    const celebKey = "karya_celeb_" + m.id + "_" + done.length;
+    const celebKey = "karya_celeb_" + m.id + "_" + weekKey;
     const alreadySeen = localStorage.getItem(celebKey);
     if (!alreadySeen && !_winnerShownFor[celebKey]) {
       _winnerShownFor[celebKey] = true;
