@@ -223,6 +223,8 @@ body.is-desktop .due-lbl.soon{font-size:22px}
 /* MODAL */
 .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.52);z-index:300;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center}
 .modal-overlay.hidden{display:none}
+.modal-overlay.centered{-webkit-box-align:center;-ms-flex-align:center;align-items:center;padding:16px}
+.modal-overlay.centered .modal{border-radius:18px;max-height:88vh}
 .modal{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding-bottom:24px}
 @media(min-width:580px){.modal-overlay{-webkit-box-align:center;-ms-flex-align:center;align-items:center;padding:20px}.modal{border-radius:20px}}
 .modal-hdr{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between;padding:16px 18px 0;position:-webkit-sticky;position:sticky;top:0;background:var(--card);z-index:1}
@@ -3752,7 +3754,12 @@ function showConfetti() {
 
 // ── MODAL ─────────────────────────────────────────────────────────
 function openModal(html) {
-  document.getElementById("modal-overlay").classList.remove("hidden");
+  const ov = document.getElementById("modal-overlay");
+  ov.classList.remove("hidden");
+  // Modals are bottom-sheets by default (better for the keyboard-heavy task
+  // forms), but the Plan My Day deck is a read-and-decide screen with no
+  // typing — it belongs centred so the task text sits at eye level.
+  ov.classList.toggle("centered", html.indexOf("plan-wrap") !== -1);
   document.getElementById("modal-box").innerHTML=html;
 }
 window.closeModal=function(){ document.getElementById("modal-overlay").classList.add("hidden"); };
