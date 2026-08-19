@@ -2465,6 +2465,13 @@ function parseQuickAddText(raw) {
     }
   }
 
+  // ---- 1b. Future-task wording ----
+  // "future task" / "someday" means there is deliberately no firm date yet,
+  // so a missing date is expected, not an error worth warning about.
+  let isFuture = false;
+  const futRe = /\b(mark(ed)?\s+as\s+)?(a\s+)?future\s+task\b|\bfuture\s+task\b|\bsomeday\b|\bno\s+due\s+date\b|\bbacklog\b/i;
+  if (futRe.test(text)) { isFuture = true; text = text.replace(futRe, " "); }
+
   // ---- 2. Detect date ----
   const weekdays = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
   const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
@@ -2499,7 +2506,10 @@ function parseQuickAddText(raw) {
     dueDate = qaYmd(new Date(year,month,day));
   }
 
-  if (!dueDate) { dueDate = qaYmd(now); warnings.push("No date detected — defaulted to today."); }
+  if (!dueDate) {
+    dueDate = qaYmd(now);
+    if (!isFuture) warnings.push("No date detected — defaulted to today.");
+  }
 
   // ---- 3. Detect time ----
   let dueTime = null;
@@ -2523,7 +2533,10 @@ function parseQuickAddText(raw) {
   // so leaving them in would just clutter the title
   text = text.replace(/\b(this\s+)?(morning|afternoon|evening|night)\b/gi," ");
 
-  if (!dueTime) { dueTime = "17:00"; warnings.push("No time detected — defaulted to 5:00 PM."); }
+  if (!dueTime) {
+    dueTime = "17:00";
+    if (!isFuture) warnings.push("No time detected — defaulted to 5:00 PM.");
+  }
 
   // ---- 4. Clean up leftover title text ----
   let title = text.replace(/\s{2,}/g," ").trim();
@@ -2543,7 +2556,7 @@ function parseQuickAddText(raw) {
     title = title.charAt(0).toUpperCase() + title.slice(1);
   }
 
-  return { title, dueDate, dueTime, assignee: assignee || (S.user ? S.user.name : "Everyone"), warnings };
+  return { title, dueDate, dueTime, isFuture, assignee: assignee || (S.user ? S.user.name : "Everyone"), warnings };
 }
 
 window.showQuickAdd = function(prefill) {
@@ -2679,6 +2692,10 @@ function showQuickAddPreview(parsed) {
           ${buildTimePicker("qap-time", parsed.dueTime)}
         </div>
       </div>
+      <label class="fut-row" style="display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer">
+        <input type="checkbox" id="qap-future" ${parsed.isFuture?"checked":""} style="width:18px;height:18px">
+        <span style="font-size:14px;font-weight:600;color:var(--txt)">🔄 Future task (no firm date yet)</span>
+      </label>
     </div>
     <div class="modal-foot">
       <button class="btn-secondary" onclick="window.showQuickAdd(window._qaRaw)">← Edit text</button>
@@ -2704,7 +2721,7 @@ window.confirmQuickAdd = async function() {
     priority:"medium",
     dueDate, dueTime,
     reminder:"ontime",
-    isFuture:false,
+    isFuture:document.getElementById("qap-future")?.checked||false,
     isPrivate:false,
     recur:null,
     remindUntil:dueDate,
