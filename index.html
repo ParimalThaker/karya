@@ -2715,16 +2715,21 @@ window.confirmQuickAdd = async function() {
   const dueDate=document.getElementById("qap-date")?.value;
   if (!dueDate){ alert("Please set a due date."); return; }
   const dueTime=(function(){ var h=document.getElementById("qap-time-h"); var m2=document.getElementById("qap-time-m"); var a=document.getElementById("qap-time-ap"); if(h&&m2&&a) return window.to24(h.value,m2.value,a.value); return document.getElementById("qap-time-hidden")?.value||"17:00"; })();
+  const isFut = document.getElementById("qap-future")?.checked||false;
   const task={
     title, description:"",
     assignedTo:getChips("assign-grid"),
     priority:"medium",
     dueDate, dueTime,
-    reminder:"ontime",
-    isFuture:document.getElementById("qap-future")?.checked||false,
+    // A future task has no firm date, so it must not carry a reminder —
+    // otherwise it fires at the placeholder date/time the form defaulted to.
+    // Empty string is the app's existing "no reminder" value, and the Cloud
+    // Function already skips both isFuture tasks and empty reminders.
+    reminder: isFut ? "" : "ontime",
+    isFuture: isFut,
     isPrivate:false,
     recur:null,
-    remindUntil:dueDate,
+    remindUntil: isFut ? null : dueDate,
     status:"pending", createdBy:S.user.name,
     createdAt:new Date().toISOString(),
     image:null
@@ -2900,7 +2905,10 @@ window.createTask = async function() {
     assignedTo:getChips("assign-grid"),
     priority:document.getElementById("ct-prio")?.value||"medium",
     dueDate, dueTime,
-    reminder:document.getElementById("ct-remind")?.value||"ontime",
+    // Same rule as Quick Add: a future task carries no reminder, so it can't
+    // fire at whatever placeholder date the form happened to default to.
+    reminder:(document.getElementById("ct-future")?.checked)
+             ? "" : (document.getElementById("ct-remind")?.value||"ontime"),
     isFuture:document.getElementById("ct-future")?.checked||false,
     isPrivate:S.user?.isAdmin&&document.getElementById("ct-private")?.checked||false,
     recur: getRecurConfig("ct"),
@@ -3445,6 +3453,7 @@ function rescheduleAllReminders() {
 
 function scheduleReminder(task) {
   if (!task.dueDate || task.status==="completed") return;
+  if (task.isFuture) return;  // no firm date yet — nothing to remind about
   // Only schedule if current user is assigned
   if (S.user) {
     const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo||"Everyone"];
