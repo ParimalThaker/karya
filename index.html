@@ -130,11 +130,13 @@ body.glass-theme .matrix-card{background:rgba(255,255,255,.08);border-color:rgba
 .week-task-lifted{opacity:.35}
 .week-task-ghost{position:fixed;pointer-events:none;z-index:9999;width:100px;box-shadow:0 6px 20px rgba(0,0,0,.3);transform:translate(-50%,-50%) rotate(-2deg);background:var(--card);border:1.5px solid var(--acc);border-radius:5px;padding:3px 5px;font-size:10px;font-weight:600;color:var(--txt)}
 .live-clock{margin-left:auto;font-weight:800;font-size:12px;color:var(--txt);white-space:nowrap}
-.plan-wrap{display:flex;flex-direction:column}
-.plan-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.plan-count{font-size:12px;font-weight:800;color:var(--mut);letter-spacing:.4px}
-.plan-bar{height:5px;border-radius:99px;background:var(--bdr);overflow:hidden;margin-bottom:16px}
-.plan-bar-fill{height:100%;background:var(--acc);border-radius:99px;transition:width .3s}
+.plan-wrap{display:flex;flex-direction:column;padding:16px 18px 6px}
+.plan-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.plan-heading{font-size:17px;font-weight:800;color:var(--txt);line-height:1.2}
+.plan-count{font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.4px;margin-top:3px}
+.plan-head .modal-x{flex-shrink:0;margin:-4px -4px 0 0}
+.plan-bar{height:6px;border-radius:99px;background:var(--bdr);overflow:hidden;margin-bottom:16px}
+.plan-bar-fill{height:100%;background:linear-gradient(90deg,#8B5CF6,#6366F1);border-radius:99px;transition:width .3s}
 .plan-body{margin-bottom:18px}
 .plan-due{display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px;margin-bottom:10px}
 .plan-due.late{background:#FEE2E2;color:#B91C1C}
@@ -144,8 +146,9 @@ body.glass-theme .matrix-card{background:rgba(255,255,255,.08);border-color:rgba
 .plan-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
 .plan-sub{font-size:11px}
 .plan-desc{margin-top:10px;font-size:13px;color:var(--mut);line-height:1.5;max-height:90px;overflow-y:auto}
-.plan-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.plan-btn{padding:13px 8px;border-radius:10px;border:1.5px solid var(--bdr);background:var(--card);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer}
+.plan-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.plan-actions-2{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px}
+.plan-btn{padding:13px 6px;border-radius:10px;border:1.5px solid var(--bdr);background:var(--card);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .plan-done{background:#00C896;color:#fff;border-color:#00C896}
 .plan-today{background:var(--acc);color:#fff;border-color:var(--acc)}
 .plan-tom{background:#FFB347;color:#fff;border-color:#FFB347}
@@ -277,13 +280,13 @@ body.is-desktop .due-lbl.soon{font-size:22px}
 
 /* BIG NOTIFICATION — persistent, 40% screen */
 .big-notif-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:9998;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:20px;-webkit-animation:fadeIn .25s ease;animation:fadeIn .25s ease}
-.big-notif-box{background:#fff;border-radius:22px;padding:28px 24px 22px;width:100%;max-width:460px;min-height:42vh;box-shadow:0 16px 56px rgba(0,0,0,.5);-webkit-animation:popIn .3s ease;animation:popIn .3s ease;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:16px}
+.big-notif-box{background:var(--card);border-radius:22px;padding:28px 24px 22px;width:100%;max-width:460px;min-height:42vh;box-shadow:0 16px 56px rgba(0,0,0,.5);-webkit-animation:popIn .3s ease;animation:popIn .3s ease;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:16px}
 .bni-header{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:flex-start;-ms-flex-align:flex-start;align-items:flex-start;gap:14px}
 .bni-bell{font-size:38px;-ms-flex-negative:0;flex-shrink:0;margin-top:2px}
 .bni-title-wrap{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:5px;-webkit-box-flex:1;-ms-flex:1;flex:1}
-.bni-task{font-size:28px;font-weight:800;color:#1A1F2E;line-height:1.25;word-break:break-word}
-.bni-donow{font-size:11px;font-weight:400;color:#aaa;letter-spacing:.04em;text-transform:uppercase}
-.bni-snooze-lbl{font-size:11px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.08em;text-align:center}
+.bni-task{font-size:28px;font-weight:800;color:var(--txt);line-height:1.25;word-break:break-word}
+.bni-donow{font-size:11px;font-weight:400;color:var(--mut);letter-spacing:.04em;text-transform:uppercase}
+.bni-snooze-lbl{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.08em;text-align:center}
 .bni-snooze-row{display:-webkit-box;display:-ms-flexbox;display:flex;gap:8px;-ms-flex-wrap:wrap;flex-wrap:wrap}
 
 .snooze-row{display:-webkit-box;display:-ms-flexbox;display:flex;gap:7px;width:100%;-ms-flex-wrap:wrap;flex-wrap:wrap;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center}
@@ -621,12 +624,15 @@ body.glass-theme .big-notif-box {
   border: 1px solid rgba(255,255,255,0.18) !important;
   box-shadow: 0 24px 80px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.18) !important;
 }
-body.glass-theme .big-notif-donow {
-  background: rgba(167,139,250,0.18) !important;
+/* Bug fix: these overrides used to target .big-notif-task / .big-notif-donow /
+   .snooze-label, but the popup markup actually renders .bni-task / .bni-donow /
+   .bni-snooze-lbl. The selectors matched nothing, so the task title kept its
+   default near-black (#1A1F2E) and was invisible on the dark glass panel. */
+body.glass-theme .bni-donow {
   color: #C4B5FD !important;
 }
-body.glass-theme .big-notif-task { color: #F0EEFF !important; }
-body.glass-theme .snooze-label { color: rgba(200,190,255,.5) !important; }
+body.glass-theme .bni-task { color: #F0EEFF !important; }
+body.glass-theme .bni-snooze-lbl { color: rgba(200,190,255,.75) !important; }
 body.glass-theme .snooze-btn {
   background: rgba(255,255,255,0.07) !important;
   border-color: rgba(255,255,255,0.14) !important;
@@ -983,7 +989,10 @@ function renderPlanCard() {
   openModal([
     "<div class='plan-wrap'>",
     "  <div class='plan-head'>",
-    "    <div class='plan-count'>" + (_planIdx+1) + " of " + total + "</div>",
+    "    <div>",
+    "      <div class='plan-heading'>Plan Your Day</div>",
+    "      <div class='plan-count'>" + (_planIdx+1) + " of " + total + "</div>",
+    "    </div>",
     "    <button class='modal-x' onclick='window.closePlan()'>\u2715</button>",
     "  </div>",
     "  <div class='plan-bar'><div class='plan-bar-fill' style='width:" + pctBar + "%'></div></div>",
@@ -999,10 +1008,12 @@ function renderPlanCard() {
     (live.description ? "    <div class='plan-desc'>" + esc(live.description) + "</div>" : ""),
     "  </div>",
     "  <div class='plan-actions'>",
-    "    <button class='plan-btn plan-done' onclick='window.planDecide(\"done\")'>\u2705 Done</button>",
-    "    <button class='plan-btn plan-today' onclick='window.planDecide(\"today\")'>\uD83D\uDCC5 Today</button>",
-    "    <button class='plan-btn plan-tom' onclick='window.planDecide(\"tomorrow\")'>\u27A1\uFE0F Tomorrow</button>",
-    "    <button class='plan-btn plan-later' onclick='window.planDecide(\"later\")'>\uD83D\uDDD3\uFE0F Later\u2026</button>",
+    "    <button class='plan-btn plan-today' onclick='window.planDecide(\"today\")'>Today</button>",
+    "    <button class='plan-btn plan-tom' onclick='window.planDecide(\"tomorrow\")'>Tomorrow</button>",
+    "    <button class='plan-btn plan-later' onclick='window.planDecide(\"later\")'>Later\u2026</button>",
+    "  </div>",
+    "  <div class='plan-actions-2'>",
+    "    <button class='plan-btn plan-done' onclick='window.planDecide(\"done\")'>\u2705 Mark Done</button>",
     "  </div>",
     "  <button class='plan-skip' onclick='window.planDecide(\"skip\")'>Skip \u2014 decide later</button>",
     "</div>"
@@ -1034,14 +1045,16 @@ function renderPlanLaterPicker(t) {
   const def = new Date(); def.setDate(def.getDate()+7);
   openModal([
     "<div class='plan-wrap'>",
-    "  <div class='plan-head'><div class='plan-count'>Pick a date</div>",
-    "  <button class='modal-x' onclick='window.closePlan()'>\u2715</button></div>",
+    "  <div class='plan-head'>",
+    "    <div><div class='plan-heading'>Pick a date</div></div>",
+    "    <button class='modal-x' onclick='window.closePlan()'>\u2715</button>",
+    "  </div>",
     "  <div class='plan-body'>",
     "    <div class='plan-title' style='font-size:18px'>" + esc(t.title) + "</div>",
     "    <label class='flbl'>Move to</label>",
     "    <input id='plan-later-date' type='date' class='field-input' min='" + min + "' value='" + localDateStr(def) + "'>",
     "  </div>",
-    "  <div class='plan-actions'>",
+    "  <div class='plan-actions' style='grid-template-columns:1fr 1fr'>",
     "    <button class='plan-btn plan-later' onclick='window.planLaterBack()'>\u2190 Back</button>",
     "    <button class='plan-btn plan-today' onclick='window.planLaterConfirm()'>\u2713 Move</button>",
     "  </div>",
@@ -1371,7 +1384,17 @@ function initFirebase() {
         // FCM foreground message — strictly only show if assigned to current user
         const data = payload.data || {};
         const taskId = data.taskId || "";
-        const title  = (payload.notification || {}).body || data.title || "You have a reminder";
+        // Regression fix: payloads are now DATA-ONLY (to stop FCM double-
+        // rendering notifications), so payload.notification no longer exists.
+        // In the data payload, `title` is the banner heading ("Karya - Do
+        // Now") and `body` is the actual task name — reading `data.title`
+        // here made the popup show "Karya - Do Now" as the task. Prefer the
+        // local task record, then data.body, and never fall back to data.title.
+        const localTask = S.tasks.find(t => t.id === (data.taskId || ""));
+        const title = (localTask && localTask.title)
+                      || data.body
+                      || (payload.notification || {}).body
+                      || "You have a reminder";
         if (!S.user) return; // not logged in yet — ignore
         if (!taskId) return; // no task ID — can't verify assignment, ignore safely
         const task = S.tasks.find(t => t.id === taskId);
