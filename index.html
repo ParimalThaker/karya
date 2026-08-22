@@ -780,7 +780,7 @@ body.glass-theme .img-drop {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
-         onSnapshot, serverTimestamp, query, orderBy, where, getDocs, limit }
+         onSnapshot, serverTimestamp, query, orderBy, where, getDocs, getDoc, limit }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
@@ -897,7 +897,7 @@ function checkPlanTriggers() {
   const params = new URLSearchParams(location.search);
   if (params.get("plan") === "1") {
     history.replaceState({}, "", location.pathname);
-    localStorage.setItem("karya_plan_" + planTodayStr(), "1");
+    markPlannedToday();
     window.openPlanMyDay(true);
     return;
   }
@@ -956,12 +956,41 @@ window.openPlanMyDay = function(manual) {
   return true;
 };
 
-function maybeAutoOpenPlan() {
-  // Once per calendar day, per device
-  const key = "karya_plan_" + planTodayStr();
-  if (localStorage.getItem(key)) return;
+// Once per calendar day, PER USER — not per device. The flag used to live
+// only in localStorage, so someone who planned their day on the phone got
+// prompted all over again on the PC. It now lives in Firestore keyed by
+// userId, with localStorage kept as a fast local guard and offline fallback.
+function planLocalKey() { return "karya_plan_" + planTodayStr(); }
+
+async function hasPlannedToday() {
+  if (localStorage.getItem(planLocalKey())) return true;   // this device already did it
+  if (!S.fbReady || !db || !S.user) return false;
+  try {
+    const snap = await getDoc(doc(db, "karya_plan_state", S.user.id));
+    if (snap.exists() && snap.data().date === planTodayStr()) {
+      localStorage.setItem(planLocalKey(), "1");            // cache so we skip the read next time
+      return true;
+    }
+  } catch(e) { console.warn("[Karya] Plan state read failed:", e); }
+  return false;
+}
+
+async function markPlannedToday() {
+  localStorage.setItem(planLocalKey(), "1");
+  if (!S.fbReady || !db || !S.user) return;
+  try {
+    await setDoc(doc(db, "karya_plan_state", S.user.id),
+                 { date: planTodayStr(), userName: S.user.name, ts: serverTimestamp() });
+  } catch(e) { console.warn("[Karya] Plan state write failed:", e); }
+}
+
+async function maybeAutoOpenPlan() {
+  if (await hasPlannedToday()) return;
+  // Re-check after the await: the deck may have been opened in the meantime
+  // (manual button, another trigger firing) and we must not stack two decks.
+  if (isModalOpen()) return;
   const opened = window.openPlanMyDay(false);
-  if (opened) localStorage.setItem(key, "1");
+  if (opened) markPlannedToday();
 }
 
 function daysOverdueLabel(t) {
@@ -1096,6 +1125,7 @@ async function applyPlanDate(t, newDate) {
 }
 
 window.closePlan = function() {
+  markPlannedToday();   // dismissing counts as handled — don't re-prompt elsewhere
   closeModal();
   _planQueue = []; _planIdx = 0;
   renderTaskArea(); updateStats();
@@ -1103,6 +1133,7 @@ window.closePlan = function() {
 
 function finishPlan() {
   const n = _planDecided;
+  markPlannedToday();
   closeModal();
   renderTaskArea(); updateStats();
   if (n > 0) { showConfetti(); showToast("\u2600\uFE0F Day planned \u2014 " + n + " sorted!"); }
