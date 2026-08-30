@@ -756,8 +756,8 @@ body.ios-theme[data-wallpaper]::before {
   animation: none;
 }
 body.ios-theme #app,
-body.ios-theme .app-shell,
-body.ios-theme .task-list { background: transparent !important; position: relative; z-index: 1; }
+body.ios-theme .app-shell { background: transparent !important; }
+body.ios-theme .task-list { background: transparent !important; }
 
 /* Nav — glass panel, ONE slow ambient sheen pass on load only */
 body.ios-theme .topbar {
@@ -1321,6 +1321,63 @@ html body.glassdark-theme ::-webkit-scrollbar-thumb { background: rgba(129,140,2
 .recur-sub{display:none;margin-top:8px}
 .recur-sub.show{display:block}
 
+
+/* ── ASSIGN CHIP SELECTION FIX — all new themes ──────────────────
+   toggleChip() sets inline style background/color on .sel-chip.
+   Theme !important rules were overriding those. These rules restore
+   selected state visibility while keeping unselected chips styled. */
+
+/* iOS Liquid Glass */
+html body.ios-theme .assign-chip {
+  background: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.84) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
+html body.ios-theme .assign-chip.sel-chip {
+  background: var(--chip-color, #A78BFA) !important;
+  color: #fff !important;
+  border-color: var(--chip-color, #A78BFA) !important;
+  box-shadow: 0 0 12px rgba(255,255,255,0.20) !important;
+}
+
+/* Carbon Black */
+html body.carbon-theme .assign-chip {
+  background: #2E2E2E !important;
+  color: #C6C6C6 !important;
+  border-color: #525252 !important;
+}
+html body.carbon-theme .assign-chip.sel-chip {
+  background: var(--chip-color, #78A9FF) !important;
+  color: #000 !important;
+  border-color: var(--chip-color, #78A9FF) !important;
+  box-shadow: 0 0 8px rgba(120,169,255,0.40) !important;
+}
+
+/* Frost Light */
+html body.glasslight-theme .assign-chip {
+  background: rgba(255,255,255,0.70) !important;
+  color: #18182E !important;
+  border-color: rgba(200,210,235,0.55) !important;
+}
+html body.glasslight-theme .assign-chip.sel-chip {
+  background: var(--chip-color, #3B5BDB) !important;
+  color: #fff !important;
+  border-color: var(--chip-color, #3B5BDB) !important;
+  box-shadow: 0 2px 8px rgba(59,91,219,0.35) !important;
+}
+
+/* Frost Dark */
+html body.glassdark-theme .assign-chip {
+  background: rgba(255,255,255,0.06) !important;
+  color: rgba(224,228,255,0.80) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+}
+html body.glassdark-theme .assign-chip.sel-chip {
+  background: var(--chip-color, #818CF8) !important;
+  color: #fff !important;
+  border-color: var(--chip-color, #818CF8) !important;
+  box-shadow: 0 0 12px rgba(129,140,248,0.35) !important;
+}
 </style>
 </head>
 <body>
@@ -3454,16 +3511,27 @@ window.toggleChip = function(el, mode) {
     grid.querySelectorAll(".assign-chip").forEach(c=>{
       c.classList.remove("sel-chip");
       c.style.background=""; c.style.color=""; c.style.borderColor=c.dataset.color||"#1B2B4B";
+      c.style.removeProperty("--chip-color");
     });
     el.classList.toggle("sel-chip");
-    if (el.classList.contains("sel-chip")){ el.style.background="#4F7EFF"; el.style.color="#fff"; }
-    else { el.style.background="#1B2B4B"; el.style.color="#fff"; }
+    if (el.classList.contains("sel-chip")){
+      el.style.setProperty("--chip-color","#4F7EFF");
+      el.style.background="#4F7EFF"; el.style.color="#fff";
+    } else {
+      el.style.removeProperty("--chip-color");
+      el.style.background="#1B2B4B"; el.style.color="#fff";
+    }
   } else {
     const ev=grid.querySelector("[data-name='Everyone']");
-    ev.classList.remove("sel-chip"); ev.style.background="#1B2B4B"; ev.style.color="#fff";
+    ev.classList.remove("sel-chip"); ev.style.background="#1B2B4B"; ev.style.color="#fff"; ev.style.removeProperty("--chip-color");
     el.classList.toggle("sel-chip");
-    if (el.classList.contains("sel-chip")){ el.style.background=el.dataset.color; el.style.color="#fff"; }
-    else { el.style.background=""; el.style.color=""; el.style.borderColor=el.dataset.color; }
+    if (el.classList.contains("sel-chip")){
+      el.style.setProperty("--chip-color", el.dataset.color);
+      el.style.background=el.dataset.color; el.style.color="#fff";
+    } else {
+      el.style.removeProperty("--chip-color");
+      el.style.background=""; el.style.color=""; el.style.borderColor=el.dataset.color;
+    }
   }
 };
 
