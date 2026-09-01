@@ -778,7 +778,6 @@ body.ios-theme .topbar::after {
 body.ios-theme .stats-strip {
   background: rgba(0,0,0,0.22) !important;
   border-bottom: 1px solid rgba(255,255,255,0.09) !important;
-  position: relative; z-index: 1;
 }
 body.ios-theme .stat-btn {
   background: rgba(255,255,255,0.06) !important;
@@ -1377,6 +1376,196 @@ html body.glassdark-theme .assign-chip.sel-chip {
   color: #fff !important;
   border-color: var(--chip-color, #818CF8) !important;
   box-shadow: 0 0 12px rgba(129,140,248,0.35) !important;
+}
+
+/* ── FILTER BAR ROW 2 — compact layout ─────────────────────────── */
+.filter-bar { display:flex; align-items:center; gap:6px; flex-wrap:nowrap; padding:6px 10px; }
+.f-label { font-size:9.5px; font-weight:700; color:var(--mut); text-transform:uppercase; letter-spacing:.07em; white-space:nowrap; flex-shrink:0; }
+.f-prio-sel { flex-shrink:0; max-width:110px; }
+.f-member-btn { flex-shrink:0; white-space:nowrap; }
+.f-search-wrap {
+  flex:1; min-width:0; display:flex; align-items:center; gap:5px;
+  background:var(--card); border:1px solid var(--bdr); border-radius:8px; padding:4px 8px;
+}
+.f-search-wrap input { background:none; border:none; outline:none; color:var(--txt); font-size:11px; width:100%; font-family:inherit; }
+
+/* ── ACTION ROW (Row 3) — view icons + date scrubber ───────────── */
+.action-row-wrap { padding:4px 8px 5px !important; gap:4px !important; align-items:center !important; }
+.view-icon-btns { display:flex; gap:3px; flex-shrink:0; }
+.view-icon-btn {
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:5px 7px; border-radius:9px; cursor:pointer;
+  background:var(--card); border:1px solid var(--bdr);
+  min-width:38px; font-family:inherit;
+  transition:background .15s, border-color .15s;
+}
+.view-icon-btn:active { opacity:.7; }
+.vib-icon { font-size:13px; line-height:1; }
+.vib-lbl { font-size:8px; color:var(--mut); font-weight:600; letter-spacing:.03em; white-space:nowrap; }
+.view-icon-btn.view-icon-btn-on { background:var(--acc); border-color:var(--acc); }
+.view-icon-btn.view-icon-btn-on .vib-lbl { color:#fff; }
+.vib-divider { width:1px; height:28px; background:var(--bdr); flex-shrink:0; margin:0 2px; }
+
+/* ── DATE SCRUBBER ─────────────────────────────────────────────── */
+.date-scrubber-outer { flex:1; position:relative; overflow:hidden; min-width:0; }
+.date-scrubber-outer::before, .date-scrubber-outer::after {
+  content:""; position:absolute; top:0; bottom:0; width:12px; z-index:2; pointer-events:none;
+}
+.date-scrubber-outer::before { left:0; background:linear-gradient(90deg,var(--bg),transparent); }
+.date-scrubber-outer::after  { right:0; background:linear-gradient(270deg,var(--bg),transparent); }
+.date-scrubber {
+  display:flex; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none;
+  padding:4px 4px; gap:1px; position:relative; scroll-behavior:smooth;
+}
+.date-scrubber::-webkit-scrollbar { display:none; }
+/* Sliding pill — base (non-glass themes, simple highlight) */
+.date-scrubber-pill {
+  position:absolute; top:4px; height:calc(100% - 8px);
+  background:var(--acc); opacity:.18;
+  border-radius:10px;
+  transition:transform .4s cubic-bezier(.25,1,.5,1), width .4s cubic-bezier(.25,1,.5,1);
+  pointer-events:none; z-index:1;
+}
+.d-item {
+  flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:4px 9px; border-radius:10px; cursor:pointer;
+  position:relative; z-index:2; min-width:34px; gap:2px;
+  -webkit-tap-highlight-color:transparent; user-select:none;
+}
+.d-item:active { opacity:.72; }
+.d-day { font-size:9.5px; font-weight:600; letter-spacing:.05em; color:var(--mut); transition:color .26s ease; line-height:1; }
+.d-num { font-size:15px; font-weight:700; color:var(--mut); transition:color .26s ease, font-weight .2s ease; line-height:1.1; }
+.d-dot { width:3px; height:3px; border-radius:50%; background:var(--mut); margin-top:1px; transition:background .26s ease; opacity:.5; }
+.d-item.d-active .d-day { color:var(--acc); }
+.d-item.d-active .d-num { color:var(--acc); font-weight:800; }
+.d-item.d-active .d-dot { background:var(--acc); opacity:1; }
+
+/* Date filter badge */
+.date-filter-badge {
+  margin:0 12px 6px; display:flex; align-items:center; justify-content:space-between;
+  background:var(--card); border:1px solid var(--bdr); border-radius:8px; padding:5px 12px;
+  font-size:11.5px; color:var(--mut);
+}
+.dfb-clear { font-size:11px; cursor:pointer; padding:2px 7px; background:var(--bg); border-radius:5px; border:1px solid var(--bdr); color:var(--mut); }
+
+/* ── GLASS THEME OVERRIDES — Row 2 ─────────────────────────────── */
+html body.ios-theme .filter-bar,
+html body.glass-theme .filter-bar {
+  background:rgba(0,0,0,.22) !important;
+  border-bottom:1px solid rgba(255,255,255,.07) !important;
+}
+html body.ios-theme .f-search-wrap,
+html body.glass-theme .f-search-wrap {
+  background:rgba(255,255,255,.09) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+html body.ios-theme .f-search-wrap input,
+html body.glass-theme .f-search-wrap input { color:#fff !important; }
+html body.ios-theme .f-search-wrap input::placeholder,
+html body.glass-theme .f-search-wrap input::placeholder { color:rgba(255,255,255,.30) !important; }
+
+/* ── GLASS THEME OVERRIDES — Row 3 view buttons ─────────────────── */
+html body.ios-theme .view-icon-btn,
+html body.glass-theme .view-icon-btn {
+  /* Option B: iOS 26 Liquid Glass capsule */
+  background:linear-gradient(160deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,.07) 60%,rgba(0,0,0,.04) 100%) !important;
+  backdrop-filter:blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter:blur(20px) saturate(180%) !important;
+  border-top:1px solid rgba(255,255,255,.46) !important;
+  border-left:1px solid rgba(255,255,255,.24) !important;
+  border-right:1px solid rgba(255,255,255,.08) !important;
+  border-bottom:1px solid rgba(0,0,0,.16) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38), 0 4px 14px rgba(0,0,0,.28) !important;
+  position:relative; overflow:hidden;
+}
+html body.ios-theme .view-icon-btn::before,
+html body.glass-theme .view-icon-btn::before {
+  content:""; position:absolute; top:0; left:0; right:0; height:40%;
+  background:linear-gradient(180deg,rgba(255,255,255,.10) 0%,transparent 100%);
+  pointer-events:none;
+}
+html body.ios-theme .view-icon-btn.view-icon-btn-on,
+html body.glass-theme .view-icon-btn.view-icon-btn-on {
+  background:linear-gradient(160deg,rgba(255,255,255,.28) 0%,rgba(255,255,255,.14) 60%,rgba(0,0,0,.02) 100%) !important;
+  border-top-color:rgba(255,255,255,.65) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 6px 18px rgba(0,0,0,.32), 0 0 10px rgba(255,255,255,.08) !important;
+}
+html body.ios-theme .vib-lbl,
+html body.glass-theme .vib-lbl { color:rgba(255,255,255,.50) !important; }
+html body.ios-theme .view-icon-btn.view-icon-btn-on .vib-lbl,
+html body.glass-theme .view-icon-btn.view-icon-btn-on .vib-lbl { color:#fff !important; }
+html body.ios-theme .vib-divider,
+html body.glass-theme .vib-divider { background:rgba(255,255,255,.12) !important; }
+
+/* ── GLASS DATE SCRUBBER PILL — Option B (iOS 26 Liquid Glass) ──── */
+html body.ios-theme .date-scrubber-pill,
+html body.glass-theme .date-scrubber-pill {
+  background:linear-gradient(
+    160deg,
+    rgba(255,255,255,.22) 0%,
+    rgba(255,255,255,.10) 40%,
+    rgba(255,255,255,.06) 70%,
+    rgba(0,0,0,.05) 100%
+  ) !important;
+  opacity:1 !important;
+  backdrop-filter:blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter:blur(24px) saturate(200%) !important;
+  border-top:1px solid rgba(255,255,255,.52) !important;
+  border-left:1px solid rgba(255,255,255,.28) !important;
+  border-right:1px solid rgba(255,255,255,.10) !important;
+  border-bottom:1px solid rgba(0,0,0,.18) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.45),
+    inset 0 -1px 0 rgba(0,0,0,.12),
+    0 8px 24px rgba(0,0,0,.32),
+    0 2px 6px rgba(0,0,0,.18) !important;
+  border-radius:12px !important;
+}
+html body.ios-theme .date-scrubber-pill::before,
+html body.glass-theme .date-scrubber-pill::before {
+  content:""; position:absolute;
+  top:0; left:10%; right:10%; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.68) 20%,rgba(255,255,255,.68) 80%,transparent);
+}
+html body.ios-theme .date-scrubber-pill::after,
+html body.glass-theme .date-scrubber-pill::after {
+  content:""; position:absolute;
+  top:0; left:0; right:0; height:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.11) 0%,transparent 100%);
+  border-radius:12px 12px 0 0; pointer-events:none;
+}
+html body.ios-theme .d-item .d-day,
+html body.ios-theme .d-item .d-num,
+html body.glass-theme .d-item .d-day,
+html body.glass-theme .d-item .d-num { color:rgba(255,255,255,.28) !important; }
+html body.ios-theme .d-item .d-dot,
+html body.glass-theme .d-item .d-dot { background:rgba(255,255,255,.28) !important; opacity:1 !important; }
+html body.ios-theme .d-item.d-active .d-day,
+html body.ios-theme .d-item.d-active .d-num,
+html body.glass-theme .d-item.d-active .d-day,
+html body.glass-theme .d-item.d-active .d-num { color:#fff !important; }
+html body.ios-theme .d-item.d-active .d-dot,
+html body.glass-theme .d-item.d-active .d-dot { background:#fff !important; }
+html body.ios-theme .date-scrubber-outer::before,
+html body.glass-theme .date-scrubber-outer::before {
+  background:linear-gradient(90deg,rgba(8,0,26,.5),transparent) !important;
+}
+html body.ios-theme .date-scrubber-outer::after,
+html body.glass-theme .date-scrubber-outer::after {
+  background:linear-gradient(270deg,rgba(8,0,26,.5),transparent) !important;
+}
+html body.ios-theme .date-filter-badge,
+html body.glass-theme .date-filter-badge {
+  background:rgba(255,255,255,.08) !important;
+  border-color:rgba(255,255,255,.14) !important;
+  color:rgba(255,255,255,.65) !important;
+}
+html body.ios-theme .dfb-clear,
+html body.glass-theme .dfb-clear {
+  background:rgba(255,255,255,.07) !important;
+  border-color:rgba(255,255,255,.13) !important;
+  color:rgba(255,255,255,.55) !important;
 }
 </style>
 </head>
@@ -2241,7 +2430,8 @@ function render() {
   if (!S.user?.id){ app.innerHTML = buildUserSelect(); return; }
   app.innerHTML = buildMain();
   renderTaskArea(); updateStats();
-  updateLiveClock();
+  updateLiveClock(); // stub — no-op
+  requestAnimationFrame(() => { initDateScrubber(); });
   document.onkeydown = e => { if(e.key==="Escape") closeModal(); };
 }
 
@@ -2398,30 +2588,182 @@ function linkify(s) {
 }
 
 function buildFilterBar() {
+  const isGlassTheme = (()=>{ const t=THEMES[S.theme]||{}; return t.glass||t.iosGlass; })();
   const memberBtn = (S.view==="team"||S.view==="teamdone")
-    ? "<button class='prio-sel' id='member-filter-btn' onclick='window.showMemberFilterPicker()' style='cursor:pointer;white-space:nowrap'>\uD83D\uDC65 " + ((S.memberFilterList&&S.memberFilterList.length) ? S.memberFilterList.length+" Selected" : "All Members") + "</button>"
-    : "";
-  return "<span class='f-label'>Filter:</span>"
-    + "<select class='prio-sel' onchange='S.filter=this.value;renderTaskArea()'>"
+    ? "<button class='prio-sel f-member-btn' id='member-filter-btn' onclick='window.showMemberFilterPicker()' style='cursor:pointer;white-space:nowrap;flex-shrink:0'>" + ((S.memberFilterList&&S.memberFilterList.length) ? S.memberFilterList.length+" Selected" : "Member") + "</button>"
+    : "<button class='prio-sel f-member-btn' onclick='window.showMemberFilterPicker()' style='cursor:pointer;white-space:nowrap;flex-shrink:0'>Member</button>";
+  return "<span class='f-label' style='flex-shrink:0'>Filter:</span>"
+    + "<select class='prio-sel f-prio-sel' style='flex-shrink:0' onchange='S.filter=this.value;renderTaskArea()'>"
     + "<option value='all'" + (S.filter==="all"?" selected":"") + ">All Priority</option>"
     + "<option value='high'" + (S.filter==="high"?" selected":"") + ">\uD83D\uDD34 High</option>"
     + "<option value='medium'" + (S.filter==="medium"?" selected":"") + ">\uD83D\uDFE1 Medium</option>"
     + "<option value='low'" + (S.filter==="low"?" selected":"") + ">\uD83D\uDFE2 Low</option>"
     + "</select>"
     + memberBtn
-    + "<span id='live-clock' class='live-clock'></span>";
+    + "<div class='f-search-wrap' style='flex:1;min-width:0;display:flex;align-items:center;gap:5px'>"
+    + "<span style='font-size:11px;opacity:.45;flex-shrink:0'>🔍</span>"
+    + "<input id='filter-search-inline' type='text' placeholder='Search…' value='" + esc(S.search) + "' oninput='window.setSearch(this.value)' style='background:none;border:none;outline:none;color:var(--txt);font-size:11px;width:100%;font-family:inherit'>"
+    + "</div>";
 }
 
 function updateLiveClock() {
-  const el = document.getElementById("live-clock");
-  if (!el) return;
-  const now = new Date();
-  const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const monNames=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  let h = now.getHours(); const ap = h>=12?"PM":"AM"; h = h%12; if (h===0) h=12;
-  const m = String(now.getMinutes()).padStart(2,"0");
-  el.textContent = dayNames[now.getDay()]+", "+now.getDate()+" "+monNames[now.getMonth()]+" • "+h+":"+m+" "+ap;
+  // Live clock removed — replaced by date scrubber
+  // Kept as stub so any callsites do not error
 }
+
+function initDateScrubber() {
+  const sc  = document.getElementById("date-scrubber");
+  const pill = document.getElementById("date-scrubber-pill");
+  if (!sc || !pill) return;
+
+  // Only render for glass/ios themes
+  const t = THEMES[S.theme] || {};
+  const isGlassTheme = t.glass || t.iosGlass;
+  if (!isGlassTheme) {
+    // Hide outer for non-glass themes
+    const outer = document.getElementById("date-scrubber-outer");
+    if (outer) outer.style.display = "none";
+    return;
+  }
+  const outer = document.getElementById("date-scrubber-outer");
+  if (outer) outer.style.display = "";
+
+  const DAY = ["S","M","T","W","T","F","S"];
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const today = new Date();
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function toYMD(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  const todayYMD = toYMD(today);
+
+  // Build 7 date items: -2 to +4 from today
+  const dates = [];
+  for (let i = -2; i <= 4; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    dates.push({ d, i, ymd: toYMD(d) });
+  }
+
+  // Clear and rebuild scrubber items (pill stays)
+  sc.querySelectorAll(".d-item").forEach(e => e.remove());
+
+  let activeIdx = 2; // today index
+
+  dates.forEach(({ d, i, ymd }, idx) => {
+    const el = document.createElement("div");
+    el.className = "d-item" + (S.dateFilter === ymd ? " d-active" : "");
+    el.dataset.ymd = ymd;
+
+    const dayEl = document.createElement("div");
+    dayEl.className = "d-day";
+    dayEl.textContent = DAY[d.getDay()];
+
+    const numEl = document.createElement("div");
+    numEl.className = "d-num";
+    numEl.textContent = d.getDate();
+
+    el.appendChild(dayEl);
+    el.appendChild(numEl);
+
+    if (i === 0) {
+      const dot = document.createElement("div");
+      dot.className = "d-dot";
+      el.appendChild(dot);
+    }
+
+    el.addEventListener("click", () => {
+      if (S.dateFilter === ymd) {
+        // Tap same date — clear filter
+        S.dateFilter = null;
+        sc.querySelectorAll(".d-item").forEach(e => e.classList.remove("d-active"));
+        movePillToToday();
+        hideDateBadge();
+        renderTaskArea();
+      } else {
+        S.dateFilter = ymd;
+        sc.querySelectorAll(".d-item").forEach(e => e.classList.remove("d-active"));
+        el.classList.add("d-active");
+        movePill(el);
+        showDateBadge(d, i);
+        renderTaskArea();
+      }
+    });
+
+    sc.appendChild(el);
+  });
+
+  // Position pill
+  function movePill(el) {
+    const sr = sc.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const x = er.left - sr.left + sc.scrollLeft;
+    pill.style.transform = "translateX(" + x + "px)";
+    pill.style.width = er.width + "px";
+  }
+
+  function movePillToToday() {
+    const items = sc.querySelectorAll(".d-item");
+    if (items[2]) movePill(items[2]);
+  }
+
+  function showDateBadge(d, offset) {
+    let badge = document.getElementById("date-filter-badge");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.id = "date-filter-badge";
+      badge.className = "date-filter-badge";
+      const tl = document.getElementById("task-list");
+      if (tl && tl.parentNode) tl.parentNode.insertBefore(badge, tl);
+    }
+    const lbl = offset === 0
+      ? "Today · " + d.getDate() + " " + MON[d.getMonth()]
+      : DAY[d.getDay()] + " " + d.getDate() + " " + MON[d.getMonth()];
+    badge.innerHTML = "<span>Showing: <strong>" + lbl + "</strong></span>"
+      + "<span class='dfb-clear' onclick='window.clearDateFilter()'>✕ Clear</span>";
+    badge.style.display = "flex";
+  }
+
+  function hideDateBadge() {
+    const badge = document.getElementById("date-filter-badge");
+    if (badge) badge.style.display = "none";
+  }
+
+  // Init pill position with no transition first
+  requestAnimationFrame(() => {
+    const items = sc.querySelectorAll(".d-item");
+    const activeEl = S.dateFilter
+      ? Array.from(items).find(e => e.dataset.ymd === S.dateFilter) || items[2]
+      : items[2];
+    if (!activeEl) return;
+    pill.style.transition = "none";
+    const sr = sc.getBoundingClientRect();
+    const er = activeEl.getBoundingClientRect();
+    pill.style.width = er.width + "px";
+    pill.style.transform = "translateX(" + (er.left - sr.left + sc.scrollLeft) + "px)";
+    requestAnimationFrame(() => {
+      pill.style.transition = "transform .4s cubic-bezier(.25,1,.5,1), width .4s cubic-bezier(.25,1,.5,1)";
+    });
+  });
+}
+
+window.clearDateFilter = function() {
+  S.dateFilter = null;
+  const badge = document.getElementById("date-filter-badge");
+  if (badge) badge.style.display = "none";
+  // Reset active class to today
+  const sc = document.getElementById("date-scrubber");
+  if (sc) {
+    sc.querySelectorAll(".d-item").forEach(e => e.classList.remove("d-active"));
+    const pill = document.getElementById("date-scrubber-pill");
+    const items = sc.querySelectorAll(".d-item");
+    if (items[2] && pill) {
+      const sr = sc.getBoundingClientRect();
+      const er = items[2].getBoundingClientRect();
+      pill.style.transform = "translateX(" + (er.left - sr.left + sc.scrollLeft) + "px)";
+      pill.style.width = er.width + "px";
+    }
+  }
+  renderTaskArea();
+};
 
 function refreshFilterBar() {
   const el = document.getElementById("filter-bar-wrap");
@@ -2459,14 +2801,27 @@ function buildMain() {
       ${u.isAdmin ? "<div class=\"s-div\"></div><button class=\"stat-btn " + (S.view==="private"?"active":"") + "\" onclick=\"window.setView('private')\"><span class=\"s-num\" id=\"sn-priv\">0</span><span class=\"s-lbl\">🔒 Private</span></button>" : ""}
     </div>
     <div class="filter-bar" id="filter-bar-wrap">${(S.matrixMode||S.weekMode)?"":buildFilterBar()}</div>
-    <div class="search-bar-wrap" style="padding:0 14px 8px;display:flex;gap:8px;align-items:center">
-      ${(S.matrixMode||S.weekMode)?"":`<input id="global-search" type="text" placeholder="🔍 Search all tasks (pending + done)…"
-        value="${esc(S.search)}"
-        oninput="window.setSearch(this.value)"
-        style="flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--bdr);background:var(--card);color:var(--txt);font-size:14px">`}
-      <button class="btn-secondary" style="white-space:nowrap;padding:9px 14px;font-size:13px" onclick="window.toggleMatrixView()">${S.matrixMode?"← List":"📊 Matrix"}</button>
-      <button class="btn-secondary" style="white-space:nowrap;padding:9px 14px;font-size:13px" onclick="window.toggleWeekView()">${S.weekMode?"← List":"📅 Week"}</button>
-      <button class="btn-secondary" style="white-space:nowrap;padding:9px 14px;font-size:13px" onclick="window.openPlanMyDay(true)">☀️ Plan</button>
+    <div class="search-bar-wrap action-row-wrap" style="padding:0 8px 6px;display:flex;gap:5px;align-items:center">
+      <div class="view-icon-btns" style="display:flex;gap:3px;flex-shrink:0">
+        <button class="view-icon-btn${(!S.matrixMode&&!S.weekMode)?' view-icon-btn-on':''}" onclick="window.setListView()" title="List">
+          <span class="vib-icon">☰</span><span class="vib-lbl">List</span>
+        </button>
+        <button class="view-icon-btn${S.matrixMode?' view-icon-btn-on':''}" onclick="window.toggleMatrixView()" title="Matrix">
+          <span class="vib-icon">📊</span><span class="vib-lbl">Matrix</span>
+        </button>
+        <button class="view-icon-btn${S.weekMode?' view-icon-btn-on':''}" onclick="window.toggleWeekView()" title="Week">
+          <span class="vib-icon">📅</span><span class="vib-lbl">Week</span>
+        </button>
+        <button class="view-icon-btn" onclick="window.openPlanMyDay(true)" title="Plan">
+          <span class="vib-icon">☀️</span><span class="vib-lbl">Plan</span>
+        </button>
+      </div>
+      <div class="vib-divider"></div>
+      <div class="date-scrubber-outer" id="date-scrubber-outer">
+        <div class="date-scrubber" id="date-scrubber">
+          <div class="date-scrubber-pill" id="date-scrubber-pill"></div>
+        </div>
+      </div>
     </div>
     <div class="task-list" id="task-list"></div>
     <div class="achieve-wrap" id="achieve-wrap">
@@ -2528,6 +2883,15 @@ function renderTaskArea() {
     }
   }
 
+  // Date scrubber filter — applied for glass/ios themes only
+  if (S.dateFilter) {
+    tasks = tasks.filter(t => {
+      if (!t.dueDate) return true; // no due date: always show
+      const td = (t.dueDate||"").slice(0,10);
+      return td === S.dateFilter;
+    });
+  }
+
   if (S.view==="mine" && !searchTerm) {
     tasks = sortMyPending(tasks);
   } else {
@@ -2572,6 +2936,11 @@ function sortMyPending(tasks) {
 // Personal view only — always the logged-in user's own pending tasks,
 // never mixed with teammates'. Urgent = overdue or due today.
 // Important = High priority only (Medium groups with Low, per spec).
+window.setListView = function() {
+  S.matrixMode = false;
+  S.weekMode = false;
+  render();
+};
 window.toggleMatrixView = function() {
   S.matrixMode = !S.matrixMode;
   if (S.matrixMode) S.weekMode = false;
