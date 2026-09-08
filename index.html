@@ -2762,6 +2762,7 @@ function loadLocal() {
   rescheduleAllReminders();
   checkUrlReminder();
   setTimeout(checkDismissedReminders, 1200);
+  setTimeout(cleanupOldNotifAcks, 6000); // clean up old per-user ack entries (7-day TTL)
   if (!_planBootDone) { _planBootDone = true; setTimeout(checkPlanTriggers, 900); }
 }
 function saveLocal() {
@@ -4892,6 +4893,19 @@ function _doSchedule(task, remindAt) {
       return;
     }
 
+    // CROSS-DEVICE SYNC (per-user): Check if THIS user already acknowledged
+    // this reminder on another device. Uses per-user path so other users
+    // on shared tasks are completely unaffected.
+    if (S.fbReady && db && S.user?.id) {
+      try {
+        const ackSnap = await getDoc(doc(db, "karya_notif_ack", S.user.id + "_" + task.id));
+        if (ackSnap.exists()) {
+          console.log("[Karya] Skipping — already acknowledged on another device:", task.title);
+          return;
+        }
+      } catch(e) { /* non-fatal — show reminder if read fails */ }
+    }
+
     const notifTitle = "Karya — Do Now";
     const notifBody  = task.title;
     const notifTag   = "karya-" + (task.id || "task");
@@ -4959,11 +4973,94 @@ function playChime() {
   } catch(e){ console.warn("Chime:",e); }
 }
 
+
+// ── CROSS-DEVICE NOTIFICATION ACK — per-user, per-task ───────────
+// Schema: karya_notif_ack/{userId}_{taskId}
+// { userId, taskId, ts, expiresAt (24hrs) }
+// Per-user so acknowledging on one device never kills another user's popup.
+
+function notifAckId(userId, taskId) {
+  return userId + "_" + taskId;
+}
+
+async function writeNotifAck(taskId) {
+  if (!S.user?.id || !taskId || !S.fbReady || !db) return;
+  try {
+    const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    await setDoc(
+      doc(db, "karya_notif_ack", notifAckId(S.user.id, taskId)),
+      { userId: S.user.id, taskId, ts: serverTimestamp(), expiresAt: expiry.toISOString() }
+    );
+  } catch(e) { console.warn("[Karya] writeNotifAck failed:", e); }
+}
+
+async function cleanupOldNotifAcks() {
+  // Runs once per session. Deletes this user's ack entries older than 7 days.
+  if (!S.fbReady || !db || !S.user?.id) return;
+  const cutoff = Date.now() - ACK_TTL_MS;
+  try {
+    const q = query(
+      collection(db, "karya_notif_ack"),
+      where("userId", "==", S.user.id),
+      where("ackedAt", "<", cutoff)
+    );
+    const snap = await getDocs(q);
+    const deletes = snap.docs.map(d => deleteDoc(doc(db, "karya_notif_ack", d.id)));
+    await Promise.all(deletes);
+    if (deletes.length) console.log("[Karya] Cleaned", deletes.length, "old ack entries");
+  } catch(e) { console.warn("[Karya] cleanupOldNotifAcks failed:", e); }
+}
+
+async function checkNotifAck(taskId) {
+  if (!S.user?.id || !taskId || !S.fbReady || !db) return false;
+  try {
+    const snap = await getDoc(doc(db, "karya_notif_ack", notifAckId(S.user.id, taskId)));
+    if (!snap.exists()) return false;
+    const data = snap.data();
+    // Check not expired
+    if (data.expiresAt && new Date(data.expiresAt) < new Date()) return false;
+    return true;
+  } catch(e) { return false; }
+}
+
+async function cleanExpiredNotifAcks() {
+  if (!S.user?.id || !S.fbReady || !db) return;
+  try {
+    // Query all ack entries for this user
+    const q = query(
+      collection(db, "karya_notif_ack"),
+      where("userId", "==", S.user.id)
+    );
+    const snap = await getDocs(q);
+    const now = new Date();
+    const deletes = [];
+    snap.forEach(d => {
+      const data = d.data();
+      if (data.expiresAt && new Date(data.expiresAt) < now) {
+        deletes.push(deleteDoc(doc(db, "karya_notif_ack", d.id)));
+      }
+    });
+    if (deletes.length) {
+      await Promise.all(deletes);
+      console.log("[Karya] Cleaned", deletes.length, "expired notif ack entries");
+    }
+  } catch(e) { console.warn("[Karya] cleanExpiredNotifAcks failed:", e); }
+}
+
+
+// ── CROSS-DEVICE REMINDER ACK — per user, per task ───────────────
+const ACK_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms — ack entries older than this are cleaned up
+
 function showBigNotif(taskTitle, taskId) {
-  document.querySelectorAll(".big-notif-overlay").forEach(e=>e.remove());
+  document.querySelectorAll(".big-notif-overlay").forEach(e=>{
+    // Cancel any existing cross-device watcher before removing
+    if (e._ackUnsubscribe) { try { e._ackUnsubscribe(); } catch(er) {} }
+    e.remove();
+  });
   playChime();
   const el = document.createElement("div");
   el.className = "big-notif-overlay";
+  el.dataset.taskId = taskId || "";
   const tid = taskId || "";
   const rows = [
     "<div class='big-notif-box'>",
@@ -4981,21 +5078,59 @@ function showBigNotif(taskTitle, taskId) {
     "    <button class='snooze-btn' onclick='window.snoozeTask(\"" + tid + "\",120,this)'>+2 hrs</button>",
     "    <button class='snooze-btn' onclick='window.snoozeTask(\"" + tid + "\",\"tomorrow\",this)'>Tomorrow</button>",
     "  </div>",
-    "  <button class='big-notif-close' onclick='this.closest(\".big-notif-overlay\").remove()'>",
+    "  <button class='big-notif-close' onclick='window.closeBigNotifById(\"" + tid + "\")'>",
     "    \u2713 Got it \u2014 on my way",
     "  </button>",
     "</div>"
   ];
   el.innerHTML = rows.join("\n");
   document.body.appendChild(el);
+
+  // CROSS-DEVICE WATCHER: Watch THIS USER's per-user ack entry.
+  // If another device of the same user acknowledges, close this popup.
+  // Other users on shared tasks are completely unaffected — they watch
+  // their own ack paths.
+  if (tid && S.fbReady && db && S.user?.id) {
+    const ackId = S.user.id + "_" + tid;
+    try {
+      const unsub = onSnapshot(doc(db, "karya_notif_ack", ackId), (snap) => {
+        if (!snap.exists()) return;
+        // Entry exists = this user acknowledged on another device
+        const overlay = document.querySelector(".big-notif-overlay[data-task-id='" + tid + "']");
+        if (overlay) {
+          if (overlay._ackUnsubscribe) { try { overlay._ackUnsubscribe(); } catch(er) {} }
+          overlay.remove();
+          console.log("[Karya] Popup closed — " + S.user.name + " acknowledged on another device");
+        }
+      });
+      // Store unsubscribe fn so we cancel it when popup is manually closed
+      el._ackUnsubscribe = unsub;
+    } catch(e) {
+      console.warn("[Karya] Cross-device watcher setup failed:", e);
+    }
+  }
   // PERSISTENT — no auto dismiss
 }
 
+// Close big notif, write per-user ack to Firestore, cancel watcher
+window.closeBigNotifById = function(tid) {
+  const overlay = document.querySelector(
+    tid ? ".big-notif-overlay[data-task-id='" + tid + "']" : ".big-notif-overlay"
+  );
+  if (!overlay) return;
+  if (overlay._ackUnsubscribe) { try { overlay._ackUnsubscribe(); } catch(e) {} }
+  overlay.remove();
+  // Write per-user ack so this user's other devices close their popups too
+  if (tid) writeNotifAck(tid);
+};
+
 
 window.snoozeTask = async function(id, mins, btn) {
-  if (!id) { btn.closest(".big-notif-overlay").remove(); return; }
+  if (!id) { window.closeBigNotifById(""); return; }
   const t=S.tasks.find(x=>x.id===id);
-  if (!t) { btn.closest(".big-notif-overlay").remove(); return; }
+  if (!t) { window.closeBigNotifById(id); return; }
+  // Write per-user ack so this user's other devices close their popups
+  writeNotifAck(id);
   // Snooze is measured from NOW, not from the original due date. Snoozing an
   // already-overdue task off its old due date landed the new reminder in the
   // past, which made it re-fire immediately.
@@ -5019,7 +5154,7 @@ window.snoozeTask = async function(id, mins, btn) {
   else { const i=S.tasks.findIndex(x=>x.id===id); if(i>-1) S.tasks[i]={...S.tasks[i],...upd}; saveLocal(); renderTaskArea(); updateStats(); }
   _scheduled.delete(id);
   scheduleReminder({...t,...upd,id});
-  btn.closest(".big-notif-overlay").remove();
+  window.closeBigNotifById(id);
   showToast(`⏸ Snoozed to ${label}`);
   await addLog("snooze",`"${t.title}" → ${label} (snooze #${snoozeLog.length} by ${S.user.name})`);
 };
