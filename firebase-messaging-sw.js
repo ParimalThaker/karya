@@ -41,9 +41,8 @@ messaging.onBackgroundMessage(function(payload) {
   // Digest messages have no taskId — they get a single "open" action and a
   // stable tag so a re-send replaces rather than stacks.
   const actions = taskId ? [
-    { action: "open",   title: "\uD83D\uDCC2 Open" },
-    { action: "snooze", title: "\u23F1\uFE0F 30m" },
-    { action: "done",   title: "\u2705 Done" }
+    { action: "open", title: "\uD83D\uDCC2 Open" },
+    { action: "done", title: "\u2705 Done" }
   ] : [
     { action: "open", title: "\uD83D\uDCC2 Open Karya" }
   ];
@@ -73,9 +72,9 @@ self.addEventListener("notificationclick", function(event) {
   const action = event.action;
   event.notification.close();
 
-  if (taskId && (action === "snooze" || action === "done")) {
+  if (taskId && action === "done") {
     event.waitUntil(postAction(taskId, action, userName));
-    return; // handled server-side, no need to open the app
+    return; // handled server-side — marks task complete, no need to open the app
   }
 
   // Body tap or explicit "open" action -> focus/open app, highlight the task.
@@ -84,6 +83,13 @@ self.addEventListener("notificationclick", function(event) {
   event.waitUntil(
     Promise.all([
       taskId ? postAction(taskId, "open", userName) : Promise.resolve(),
+
+      // Clear ALL other Karya notifications from the tray when user taps Open.
+      // Snooze/Done actions are excluded (handled above) — only Open clears all.
+      self.registration.getNotifications().then(function(notifications) {
+        notifications.forEach(function(n) { n.close(); });
+      }),
+
       clients.matchAll({ type: "window", includeUncontrolled: true }).then(function(clientList) {
         for (const client of clientList) {
           if (client.url.includes("parimalthaker.github.io/karya")) {

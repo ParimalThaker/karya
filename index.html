@@ -1567,6 +1567,263 @@ html body.glass-theme .dfb-clear {
   border-color:rgba(255,255,255,.13) !important;
   color:rgba(255,255,255,.55) !important;
 }
+
+/* ── TASK COMPLETION CELEBRATION (Option 4) ──────────────────────
+   Card: green border flash then smooth collapse.
+   Score: pulses green, scales up, +1 floats upward. */
+@keyframes taskGlowFlash {
+  0%   { border-color: rgba(34,197,94,0);   box-shadow: none; }
+  35%  { border-color: rgba(34,197,94,.90); box-shadow: 0 0 0 3px rgba(34,197,94,.25), inset 0 0 20px rgba(34,197,94,.10); }
+  100% { border-color: rgba(34,197,94,.45); box-shadow: 0 0 0 1px rgba(34,197,94,.12), inset 0 0 12px rgba(34,197,94,.06); }
+}
+@keyframes scoreNumPulse {
+  0%   { transform:scale(1);    color: var(--acc); }
+  35%  { transform:scale(1.30); color: #22C55E; }
+  70%  { transform:scale(1.18); color: #22C55E; }
+  100% { transform:scale(1);    color: var(--acc); }
+}
+@keyframes scorePlusFloat {
+  0%   { opacity:0; transform:translateY(3px); }
+  20%  { opacity:1; transform:translateY(-5px); }
+  65%  { opacity:1; transform:translateY(-12px); }
+  100% { opacity:0; transform:translateY(-20px); }
+}
+.task-card.celebrate-glow {
+  -webkit-animation: taskGlowFlash .55s ease-out forwards;
+  animation: taskGlowFlash .55s ease-out forwards;
+}
+.task-card.celebrate-collapse {
+  opacity:0 !important;
+  max-height:0 !important;
+  padding-top:0 !important;
+  padding-bottom:0 !important;
+  margin-bottom:0 !important;
+  border-top-width:0 !important;
+  border-bottom-width:0 !important;
+  -webkit-transform:scaleY(0.88);
+  transform:scaleY(0.88);
+  -webkit-transition:opacity .4s ease, max-height .4s ease, padding .4s ease, margin .4s ease, transform .3s ease, border-width .3s ease !important;
+  transition:opacity .4s ease, max-height .4s ease, padding .4s ease, margin .4s ease, transform .3s ease, border-width .3s ease !important;
+}
+/* Score +1 float element */
+.score-plus-float {
+  position:absolute; right:0; top:-6px;
+  font-size:12px; font-weight:800; color:#22C55E;
+  opacity:0; pointer-events:none;
+  -webkit-animation: scorePlusFloat 1s ease-out forwards;
+  animation: scorePlusFloat 1s ease-out forwards;
+}
+
+/* ── PLAN MY DAY — REDESIGNED BOTTOM SHEET ──────────────────────
+   Theme-aware: each theme gets its own surface treatment.
+   Base (Dark Navy): clean white modal sheet. */
+
+/* Override modal for plan — make it a bottom sheet */
+.plan-sheet-modal .modal {
+  position: fixed !important;
+  bottom: 0 !important; left: 0 !important; right: 0 !important;
+  top: auto !important;
+  border-radius: 24px 24px 0 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  max-height: 92vh !important;
+  overflow-y: auto !important;
+  padding: 0 !important;
+  transform: translateY(0) !important;
+  animation: sheetSlideUp .32s cubic-bezier(.25,1,.5,1) !important;
+}
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.plan-wrap { display:flex; flex-direction:column; }
+
+/* Handle bar */
+.plan-handle { width:40px; height:4px; border-radius:99px; background:var(--bdr); margin:12px auto 0; }
+
+/* Progress dots */
+.plan-dots { display:flex; gap:7px; justify-content:center; padding:12px 0 8px; }
+.plan-dot { width:8px; height:8px; border-radius:50%; background:var(--bdr); transition:all .3s ease; }
+.plan-dot.pd-done { background:#22C55E; transform:scale(1.1); }
+.plan-dot.pd-active { background:var(--acc); width:12px; transform:scale(1.15); }
+
+/* Task info */
+.plan-task-block { padding:4px 20px 12px; }
+.plan-due { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; border-radius:99px; padding:3px 10px; margin-bottom:8px; }
+.plan-due.today { background:rgba(239,68,68,.12); color:#DC2626; border:1px solid rgba(239,68,68,.22); }
+.plan-due.late  { background:rgba(239,68,68,.12); color:#DC2626; border:1px solid rgba(239,68,68,.22); }
+.plan-title { font-size:20px; font-weight:800; color:var(--txt); line-height:1.25; margin-bottom:5px; }
+.plan-sub-info { font-size:12px; color:var(--mut); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.plan-sub-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* Question */
+.plan-question {
+  font-size:14px; font-weight:600; color:var(--mut);
+  text-align:center; padding:10px 20px 10px;
+  border-top:1px solid var(--bdr); border-bottom:1px solid var(--bdr);
+  margin-bottom:10px;
+}
+
+/* Action rows */
+.plan-actions-new { display:flex; flex-direction:column; gap:7px; padding:0 14px 16px; }
+.plan-action-row {
+  display:flex; align-items:center; gap:12px;
+  padding:13px 15px; border-radius:14px; cursor:pointer;
+  background:var(--card); border:1px solid var(--bdr);
+  transition:opacity .15s, transform .12s;
+  -webkit-tap-highlight-color:transparent;
+}
+.plan-action-row:active { opacity:.75; transform:scale(.98); }
+.plan-action-icon {
+  width:38px; height:38px; border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:19px; flex-shrink:0;
+}
+.plan-action-text { flex:1; }
+.plan-action-main { font-size:14px; font-weight:700; color:var(--txt); line-height:1.2; }
+.plan-action-hint { font-size:11px; color:var(--mut); margin-top:1px; }
+.plan-action-arrow { font-size:18px; color:var(--mut); font-weight:300; }
+
+/* Row colour variants */
+.par-done  { background:rgba(34,197,94,.08);  border-color:rgba(34,197,94,.22); }
+.par-done  .plan-action-icon { background:rgba(34,197,94,.15); }
+.par-done  .plan-action-main { color:#16A34A; }
+.par-today { background:rgba(59,130,246,.08); border-color:rgba(59,130,246,.22); }
+.par-today .plan-action-icon { background:rgba(59,130,246,.15); }
+.par-today .plan-action-main { color:#2563EB; }
+.par-tom   { background:rgba(245,158,11,.08); border-color:rgba(245,158,11,.22); }
+.par-tom   .plan-action-icon { background:rgba(245,158,11,.15); }
+.par-tom   .plan-action-main { color:#D97706; }
+.par-later { border-color:var(--bdr); }
+.par-later .plan-action-icon { background:var(--bg,var(--card)); }
+.par-skip  { border-color:transparent; background:transparent; padding-top:6px; padding-bottom:6px; }
+.par-skip  .plan-action-main { color:var(--mut); font-weight:400; font-size:13px; }
+
+/* ── iOS LIQUID GLASS plan sheet ── */
+html body.ios-theme .plan-sheet-modal .modal {
+  background: linear-gradient(160deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.10) 40%, rgba(255,255,255,.07) 100%) !important;
+  backdrop-filter: blur(40px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+  border-top: 1px solid rgba(255,255,255,.45) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 -8px 40px rgba(0,0,0,.4) !important;
+}
+html body.ios-theme .plan-handle { background: rgba(255,255,255,.25) !important; }
+html body.ios-theme .plan-dot { background: rgba(255,255,255,.2) !important; }
+html body.ios-theme .plan-dot.pd-done { background: #22C55E !important; }
+html body.ios-theme .plan-dot.pd-active { background: rgba(255,255,255,.9) !important; }
+html body.ios-theme .plan-title { color: #fff !important; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
+html body.ios-theme .plan-sub-info { color: rgba(255,255,255,.5) !important; }
+html body.ios-theme .plan-question { color: rgba(255,255,255,.6) !important; border-color: rgba(255,255,255,.12) !important; }
+html body.ios-theme .plan-action-row {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(255,255,255,.13) !important;
+  backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
+}
+html body.ios-theme .par-done  { background: rgba(34,197,94,.14) !important; border-color: rgba(34,197,94,.28) !important; }
+html body.ios-theme .par-today { background: rgba(79,126,255,.14) !important; border-color: rgba(79,126,255,.28) !important; }
+html body.ios-theme .par-tom   { background: rgba(251,191,36,.12) !important; border-color: rgba(251,191,36,.25) !important; }
+html body.ios-theme .par-done  .plan-action-main { color: #6EE7B7 !important; }
+html body.ios-theme .par-today .plan-action-main { color: #93C5FD !important; }
+html body.ios-theme .par-tom   .plan-action-main { color: #FCD34D !important; }
+html body.ios-theme .plan-action-main { color: #fff !important; }
+html body.ios-theme .par-skip  .plan-action-main { color: rgba(255,255,255,.4) !important; }
+html body.ios-theme .plan-action-hint { color: rgba(255,255,255,.38) !important; }
+html body.ios-theme .plan-action-arrow { color: rgba(255,255,255,.28) !important; }
+
+/* ── GLASS LIQUID (existing purple mesh) plan sheet ── */
+html body.glass-theme .plan-sheet-modal .modal {
+  background: rgba(15,10,40,.82) !important;
+  backdrop-filter: blur(40px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+  border-top: 1px solid rgba(167,139,250,.3) !important;
+}
+html body.glass-theme .plan-handle { background: rgba(167,139,250,.3) !important; }
+html body.glass-theme .plan-dot { background: rgba(167,139,250,.2) !important; }
+html body.glass-theme .plan-dot.pd-done { background: #22C55E !important; }
+html body.glass-theme .plan-dot.pd-active { background: #A78BFA !important; }
+html body.glass-theme .plan-title { color: #EDE9FE !important; }
+html body.glass-theme .plan-sub-info { color: rgba(196,181,253,.55) !important; }
+html body.glass-theme .plan-question { color: rgba(196,181,253,.6) !important; border-color: rgba(167,139,250,.15) !important; }
+html body.glass-theme .plan-action-row { background: rgba(167,139,250,.08) !important; border-color: rgba(167,139,250,.18) !important; }
+html body.glass-theme .par-done  { background: rgba(34,197,94,.12) !important; border-color: rgba(34,197,94,.25) !important; }
+html body.glass-theme .par-today { background: rgba(167,139,250,.18) !important; border-color: rgba(167,139,250,.32) !important; }
+html body.glass-theme .par-tom   { background: rgba(251,191,36,.10) !important; border-color: rgba(251,191,36,.22) !important; }
+html body.glass-theme .par-done  .plan-action-main { color: #6EE7B7 !important; }
+html body.glass-theme .par-today .plan-action-main { color: #C4B5FD !important; }
+html body.glass-theme .par-tom   .plan-action-main { color: #FCD34D !important; }
+html body.glass-theme .plan-action-main { color: #EDE9FE !important; }
+html body.glass-theme .par-skip  .plan-action-main { color: rgba(196,181,253,.38) !important; }
+html body.glass-theme .plan-action-hint { color: rgba(196,181,253,.4) !important; }
+html body.glass-theme .plan-action-arrow { color: rgba(196,181,253,.28) !important; }
+
+/* ── CARBON BLACK plan sheet ── */
+html body.carbon-theme .plan-sheet-modal .modal {
+  background: #1C1C1C !important;
+  border-top: 2px solid #2E2E2E !important;
+  border-radius: 16px 16px 0 0 !important;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.6) !important;
+}
+html body.carbon-theme .plan-handle { background: #393939 !important; }
+html body.carbon-theme .plan-dot { background: #393939 !important; }
+html body.carbon-theme .plan-dot.pd-done { background: #42BE65 !important; }
+html body.carbon-theme .plan-dot.pd-active { background: #78A9FF !important; }
+html body.carbon-theme .plan-title { color: #F4F4F4 !important; font-size: 18px !important; }
+html body.carbon-theme .plan-sub-info { color: #8D8D8D !important; }
+html body.carbon-theme .plan-question { color: #8D8D8D !important; border-color: #2E2E2E !important; }
+html body.carbon-theme .plan-action-row { background: #222222 !important; border-color: #2E2E2E !important; border-radius: 8px !important; }
+html body.carbon-theme .par-done  { background: #0D1E13 !important; border-color: #42BE65 !important; }
+html body.carbon-theme .par-today { background: #0C1929 !important; border-color: #78A9FF !important; }
+html body.carbon-theme .par-tom   { background: #1C1400 !important; border-color: #F1C21B !important; }
+html body.carbon-theme .par-done  .plan-action-main { color: #42BE65 !important; }
+html body.carbon-theme .par-today .plan-action-main { color: #78A9FF !important; }
+html body.carbon-theme .par-tom   .plan-action-main { color: #F1C21B !important; }
+html body.carbon-theme .plan-action-main { color: #F4F4F4 !important; font-family: "IBM Plex Sans", system-ui, sans-serif !important; }
+html body.carbon-theme .par-skip  .plan-action-main { color: #525252 !important; }
+html body.carbon-theme .plan-action-hint { color: #6F6F6F !important; }
+html body.carbon-theme .plan-action-arrow { color: #525252 !important; }
+html body.carbon-theme .plan-action-row { border-radius: 6px !important; }
+
+/* ── FROST LIGHT plan sheet ── */
+html body.glasslight-theme .plan-sheet-modal .modal {
+  background: rgba(240,244,255,.94) !important;
+  backdrop-filter: blur(40px) !important; -webkit-backdrop-filter: blur(40px) !important;
+  border-top: 1px solid rgba(255,255,255,.95) !important;
+  box-shadow: 0 -4px 32px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,1) !important;
+}
+html body.glasslight-theme .plan-handle { background: rgba(59,91,219,.2) !important; }
+html body.glasslight-theme .plan-dot { background: rgba(59,91,219,.15) !important; }
+html body.glasslight-theme .plan-dot.pd-done { background: #16A34A !important; }
+html body.glasslight-theme .plan-dot.pd-active { background: #3B5BDB !important; }
+html body.glasslight-theme .plan-action-row { background: rgba(255,255,255,.82) !important; border-color: rgba(200,210,235,.6) !important; }
+html body.glasslight-theme .par-done  { background: rgba(34,197,94,.09) !important; border-color: rgba(34,197,94,.25) !important; }
+html body.glasslight-theme .par-today { background: rgba(59,91,219,.09) !important; border-color: rgba(59,91,219,.25) !important; }
+html body.glasslight-theme .par-tom   { background: rgba(217,119,6,.08) !important; border-color: rgba(217,119,6,.22) !important; }
+
+/* ── FROST DARK plan sheet ── */
+html body.glassdark-theme .plan-sheet-modal .modal {
+  background: rgba(14,16,28,.90) !important;
+  backdrop-filter: blur(40px) saturate(180%) !important; -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+  border-top: 1px solid rgba(255,255,255,.14) !important;
+  box-shadow: 0 -4px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+html body.glassdark-theme .plan-handle { background: rgba(129,140,248,.3) !important; }
+html body.glassdark-theme .plan-dot { background: rgba(129,140,248,.18) !important; }
+html body.glassdark-theme .plan-dot.pd-done { background: #22C55E !important; }
+html body.glassdark-theme .plan-dot.pd-active { background: #818CF8 !important; }
+html body.glassdark-theme .plan-title { color: #E0E4FF !important; }
+html body.glassdark-theme .plan-sub-info { color: rgba(160,165,205,.55) !important; }
+html body.glassdark-theme .plan-question { color: rgba(160,165,205,.6) !important; border-color: rgba(255,255,255,.08) !important; }
+html body.glassdark-theme .plan-action-row { background: rgba(255,255,255,.05) !important; border-color: rgba(255,255,255,.10) !important; }
+html body.glassdark-theme .par-done  { background: rgba(34,197,94,.10) !important; border-color: rgba(34,197,94,.22) !important; }
+html body.glassdark-theme .par-today { background: rgba(99,102,241,.12) !important; border-color: rgba(99,102,241,.25) !important; }
+html body.glassdark-theme .par-tom   { background: rgba(252,211,77,.08) !important; border-color: rgba(252,211,77,.20) !important; }
+html body.glassdark-theme .par-done  .plan-action-main { color: #6EE7B7 !important; }
+html body.glassdark-theme .par-today .plan-action-main { color: #818CF8 !important; }
+html body.glassdark-theme .par-tom   .plan-action-main { color: #FCD34D !important; }
+html body.glassdark-theme .plan-action-main { color: #E0E4FF !important; }
+html body.glassdark-theme .par-skip  .plan-action-main { color: rgba(160,165,205,.4) !important; }
+html body.glassdark-theme .plan-action-hint { color: rgba(160,165,205,.42) !important; }
 </style>
 </head>
 <body>
@@ -1742,6 +1999,16 @@ function buildPlanQueue() {
   });
 }
 
+
+// Working days: Mon–Sat. Returns next working day date string.
+// Saturday → Monday (+2), Sunday → Monday (+1), any other → +1
+function nextWorkingDay(fromDate) {
+  const d = new Date(fromDate);
+  d.setDate(d.getDate() + 1);
+  if (d.getDay() === 0) d.setDate(d.getDate() + 1); // Sunday → Monday
+  if (d.getDay() === 6) d.setDate(d.getDate() + 2); // Saturday → Monday (safety net)
+  return localDateStr(d);
+}
 window.openPlanMyDay = function(manual) {
   const q = buildPlanQueue();
   if (!q.length) {
@@ -1798,6 +2065,40 @@ function daysOverdueLabel(t) {
   return "<span class='plan-due late'>" + n + " day" + (n===1?"":"s") + " overdue</span>";
 }
 
+
+// ── TASK COMPLETION CELEBRATION — Option 4 ───────────────────────
+// Card: green border flash → smooth collapse
+// Score: green pulse + +1 float upward
+function celebrateTaskComplete(taskId) {
+  // 1. Card glow + collapse
+  const card = document.querySelector("[data-task-id='" + taskId + "']");
+  if (card) {
+    card.classList.add("celebrate-glow");
+    setTimeout(() => { card.classList.add("celebrate-collapse"); }, 520);
+  }
+
+  // 2. Score pulse + +1 float
+  // Find the score number element — it's in the stats strip
+  const scoreEl = document.getElementById("sn-mine") || document.getElementById("sn-team");
+  if (scoreEl) {
+    scoreEl.style.animation = "none";
+    scoreEl.offsetHeight; // reflow
+    scoreEl.style.animation = "scoreNumPulse .7s ease-out forwards";
+    setTimeout(() => { scoreEl.style.animation = ""; }, 750);
+
+    // +1 float
+    const wrap = scoreEl.parentElement;
+    if (wrap) {
+      wrap.style.position = "relative";
+      const plus = document.createElement("div");
+      plus.className = "score-plus-float";
+      plus.textContent = "+1";
+      wrap.appendChild(plus);
+      setTimeout(() => plus.remove(), 1050);
+    }
+  }
+}
+
 function renderPlanCard() {
   if (_planIdx >= _planQueue.length) { finishPlan(); return; }
   const t = _planQueue[_planIdx];
@@ -1805,45 +2106,84 @@ function renderPlanCard() {
   if (!live || live.status === "completed") { _planIdx++; renderPlanCard(); return; }
 
   const total = _planQueue.length;
-  const pctBar = Math.round((_planIdx/total)*100);
   const names = Array.isArray(live.assignedTo)?live.assignedTo:[live.assignedTo];
   const others = names.filter(n=>n!==S.user.name && n!=="Everyone");
   const subs = Array.isArray(live.subtasks)?live.subtasks:[];
   const subDone = subs.filter(x=>x.done).length;
   const prio = {high:"#FF6B6B",medium:"#FFB347",low:"#00C896"}[live.priority]||"#aaa";
+  const prioLabel = live.priority || "medium";
+
+  // Progress dots
+  const dots = Array.from({length:total},(_,i)=>{
+    const cls = i < _planIdx ? "plan-dot pd-done" : i === _planIdx ? "plan-dot pd-active" : "plan-dot";
+    return "<div class='" + cls + "'></div>";
+  }).join("");
+
+  // Sub info line
+  const subParts = [];
+  subParts.push("<span class='plan-sub-dot' style='background:" + prio + "'></span><span>" + prioLabel + " priority</span>");
+  if (subs.length) subParts.push("<span>\u2705 " + subDone + "/" + subs.length + " steps</span>");
+  if (others.length) subParts.push("<span>\uD83D\uDC65 " + esc(others.join(", ")) + "</span>");
+  subParts.push("<span>Task " + (_planIdx+1) + " of " + total + "</span>");
+
+  // Tomorrow label — working days aware
+  const todayDow = new Date().getDay(); // 6 = Saturday
+  const tomLabel = todayDow === 6 ? "Monday — push to Monday" : "Tomorrow — push to tomorrow";
+  const tomHint  = todayDow === 6 ? "Skips Sunday (rest day)" : "Moves due date by 1 day";
 
   openModal([
     "<div class='plan-wrap'>",
-    "  <div class='plan-head'>",
-    "    <div>",
-    "      <div class='plan-heading'>Plan Your Day</div>",
-    "      <div class='plan-count'>" + (_planIdx+1) + " of " + total + "</div>",
-    "    </div>",
-    "    <button class='modal-x' onclick='window.closePlan()'>\u2715</button>",
-    "  </div>",
-    "  <div class='plan-bar'><div class='plan-bar-fill' style='width:" + pctBar + "%'></div></div>",
-    "  <div class='plan-body'>",
+    "  <div class='plan-handle'></div>",
+    "  <div class='plan-dots'>" + dots + "</div>",
+    "  <div class='plan-task-block'>",
     "    " + daysOverdueLabel(live),
     "    <div class='plan-title'>" + esc(live.title) + "</div>",
-    "    <div class='plan-meta'>",
-    "      <span class='plan-dot' style='background:" + prio + "'></span>",
-    "      <span>" + (live.priority||"medium") + " priority</span>",
-    (subs.length ? "      <span class='plan-sub'>\u2705 " + subDone + "/" + subs.length + " steps</span>" : ""),
-    (others.length ? "      <span class='plan-sub'>\uD83D\uDC65 with " + esc(others.join(", ")) + "</span>" : ""),
+    "    <div class='plan-sub-info'>" + subParts.join("") + "</div>",
+    (live.description ? "    <div class='plan-desc' style='margin-top:6px;font-size:12px;color:var(--mut)'>" + esc(live.description) + "</div>" : ""),
+    "  </div>",
+    "  <div class='plan-question'>What will you do with this?</div>",
+    "  <div class='plan-actions-new'>",
+    "    <div class='plan-action-row par-done' onclick='window.planDecide("done")'>",
+    "      <div class='plan-action-icon'>\u2705</div>",
+    "      <div class='plan-action-text'>",
+    "        <div class='plan-action-main'>Done \u2014 I\'ve finished it</div>",
+    "        <div class='plan-action-hint'>Marks task complete</div>",
+    "      </div>",
+    "      <div class='plan-action-arrow'>\u203A</div>",
     "    </div>",
-    (live.description ? "    <div class='plan-desc'>" + esc(live.description) + "</div>" : ""),
+    "    <div class='plan-action-row par-today' onclick='window.planDecide("today")'>",
+    "      <div class='plan-action-icon'>\uD83D\uDCC5</div>",
+    "      <div class='plan-action-text'>",
+    "        <div class='plan-action-main'>Today \u2014 I\'ll do it today</div>",
+    "        <div class='plan-action-hint'>Keeps due date as today</div>",
+    "      </div>",
+    "      <div class='plan-action-arrow'>\u203A</div>",
+    "    </div>",
+    "    <div class='plan-action-row par-tom' onclick='window.planDecide("tomorrow")'>",
+    "      <div class='plan-action-icon'>\u23ED\uFE0F</div>",
+    "      <div class='plan-action-text'>",
+    "        <div class='plan-action-main'>" + tomLabel + "</div>",
+    "        <div class='plan-action-hint'>" + tomHint + "</div>",
+    "      </div>",
+    "      <div class='plan-action-arrow'>\u203A</div>",
+    "    </div>",
+    "    <div class='plan-action-row par-later' onclick='window.planDecide("later")'>",
+    "      <div class='plan-action-icon'>\uD83D\uDDD3\uFE0F</div>",
+    "      <div class='plan-action-text'>",
+    "        <div class='plan-action-main'>Later\u2026 pick a date</div>",
+    "        <div class='plan-action-hint'>Choose a specific date</div>",
+    "      </div>",
+    "      <div class='plan-action-arrow'>\u203A</div>",
+    "    </div>",
+    "    <div class='plan-action-row par-skip' onclick='window.planDecide("skip")'>",
+    "      <div class='plan-action-icon' style='font-size:14px'>\u23E9</div>",
+    "      <div class='plan-action-text'>",
+    "        <div class='plan-action-main'>Skip for now</div>",
+    "      </div>",
+    "    </div>",
     "  </div>",
-    "  <div class='plan-actions'>",
-    "    <button class='plan-btn plan-today' onclick='window.planDecide(\"today\")'>Today</button>",
-    "    <button class='plan-btn plan-tom' onclick='window.planDecide(\"tomorrow\")'>Tomorrow</button>",
-    "    <button class='plan-btn plan-later' onclick='window.planDecide(\"later\")'>Later\u2026</button>",
-    "  </div>",
-    "  <div class='plan-actions-2'>",
-    "    <button class='plan-btn plan-done' onclick='window.planDecide(\"done\")'>\u2705 Mark Done</button>",
-    "  </div>",
-    "  <button class='plan-skip' onclick='window.planDecide(\"skip\")'>Skip \u2014 decide later</button>",
     "</div>"
-  ].join(""));
+  ].join(""), "plan-sheet-modal");
 }
 
 window.planDecide = async function(choice) {
@@ -1862,8 +2202,9 @@ window.planDecide = async function(choice) {
   if (choice === "later") { renderPlanLaterPicker(t); return; }
 
   const d = new Date();
-  if (choice === "tomorrow") d.setDate(d.getDate()+1);
-  await applyPlanDate(t, localDateStr(d));
+  // Working days fix: Saturday → Monday, Sunday → Monday
+  const newDate = (choice === "tomorrow") ? nextWorkingDay(d) : localDateStr(d);
+  await applyPlanDate(t, newDate);
 };
 
 function renderPlanLaterPicker(t) {
@@ -4023,6 +4364,7 @@ window.toggleTask = async function(id) {
   await addLog(ns==="completed"?"complete":"reopen",`"${t.title}"`);
   if (ns==="completed"){
     closeModal(); showConfetti();
+    celebrateTaskComplete(id); // Option 4: card glow + score pulse
 
     // Auto-create next recurrence if task has a repeat config. We capture the
     // new doc's ID so that if the person hits Undo, we clean that up too —
@@ -4541,6 +4883,15 @@ function _doSchedule(task, remindAt) {
       }
     }
 
+    // RE-CHECK LIVE STATUS: task may have been completed on another device
+    // while the snooze timer was running. S.tasks is kept live by the
+    // Firestore real-time listener so this reflects the true current state.
+    const liveTask = S.tasks.find(x => x.id === task.id);
+    if (!liveTask || liveTask.status === "completed") {
+      console.log("[Karya] Skipping reminder — task completed on another device:", task.title);
+      return;
+    }
+
     const notifTitle = "Karya — Do Now";
     const notifBody  = task.title;
     const notifTag   = "karya-" + (task.id || "task");
@@ -4891,16 +5242,15 @@ function showConfetti() {
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────
-function openModal(html) {
+function openModal(html, extraClass) {
   const ov = document.getElementById("modal-overlay");
+  // Reset classes, then apply extra class if provided (e.g. plan-sheet-modal)
+  ov.className = "modal-overlay";
+  if (extraClass) ov.classList.add(extraClass);
   ov.classList.remove("hidden");
-  // Modals are bottom-sheets by default (better for the keyboard-heavy task
-  // forms), but the Plan My Day deck is a read-and-decide screen with no
-  // typing — it belongs centred so the task text sits at eye level.
-  ov.classList.toggle("centered", html.indexOf("plan-wrap") !== -1);
   document.getElementById("modal-box").innerHTML=html;
 }
-window.closeModal=function(){ document.getElementById("modal-overlay").classList.add("hidden"); };
+window.closeModal=function(){ const ov=document.getElementById("modal-overlay"); ov.className="modal-overlay hidden"; };
 window.closeModalClick=function(e){ if(e.target===document.getElementById("modal-overlay")) closeModal(); };
 
 // ── TOAST ─────────────────────────────────────────────────────────
