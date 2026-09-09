@@ -4956,8 +4956,14 @@ function _doSchedule(task, remindAt) {
       } catch(e) {}
     }
 
-    // Method 3: Always show in-app popup (when app is open)
-    showBigNotif(notifBody, task.id || "");
+    // Method 3: In-app popup — only when app is in foreground AND
+    // no OS notification was shown (mobile) OR OS notification failed.
+    // On Windows/desktop the OS notification (Method 1) is sufficient —
+    // showing the in-app popup too causes the double-notification the user sees.
+    const isDesktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (!shown || !isDesktop) {
+      showBigNotif(notifBody, task.id || "");
+    }
     markReminderSeen(task.id);
 
   }, Math.min(delay, MAX));
