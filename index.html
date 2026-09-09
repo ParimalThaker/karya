@@ -87,7 +87,7 @@ a{color:var(--acc)}
 .reorder-ghost{position:fixed;pointer-events:none;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:.95;border-radius:var(--r)}
 .task-card.reorder-over-top{box-shadow:inset 0 3px 0 var(--acc)}
 .task-card.reorder-over-bottom{box-shadow:inset 0 -3px 0 var(--acc)}
-.task-card.overdue{border-left-color:#FF6B6B}
+.task-card.overdue{border-left-color:#E53935}
 .task-card.done-card{opacity:.55}
 .chk{width:26px;height:26px;border-radius:50%;border:3px solid #888;background:none;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;-webkit-transition:all .2s;transition:all .2s;-ms-flex-negative:0;flex-shrink:0;margin-top:1px;-webkit-tap-highlight-color:transparent}
 .chk.done{background:#00C896;border-color:#00C896}
@@ -186,10 +186,10 @@ body.glass-theme .plan-tom{background:#FFB347;border-color:#FFB347}
 .task-meta{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:6px;-ms-flex-wrap:wrap;flex-wrap:wrap}
 .prio-dot{width:7px;height:7px;border-radius:50%;-ms-flex-negative:0;flex-shrink:0}
 .due-lbl{font-size:13px;color:var(--mut);font-weight:600}
-.due-lbl.overdue{color:#FF6B6B;font-weight:700}
+.due-lbl.overdue{color:#E53935;font-weight:700}
 .due-lbl.soon{color:#E8720C;font-weight:600}
 body.is-desktop .due-lbl{font-size:22px}
-body.is-desktop .due-lbl.overdue{font-size:22px}
+body.is-desktop .due-lbl.overdue{font-size:22px;color:#E53935}
 body.is-desktop .due-lbl.soon{font-size:22px}
 .menu-btn{background:none;border:none;color:var(--mut);font-size:20px;padding:0 3px;-ms-flex-negative:0;flex-shrink:0;line-height:1;-webkit-align-self:flex-start;-ms-flex-item-align:start;align-self:flex-start}
 .empty-state{text-align:center;padding:60px 20px;color:var(--mut)}
@@ -3273,11 +3273,24 @@ function renderTaskArea() {
 }
 
 function dateSortCompare(a,b) {
-  if(a.isFuture&&!b.isFuture) return 1;
-  if(!a.isFuture&&b.isFuture) return -1;
-  const da=a.dueDate?new Date(a.dueDate+"T"+(a.dueTime||"23:59")):new Date("2099");
-  const db2=b.dueDate?new Date(b.dueDate+"T"+(b.dueTime||"23:59")):new Date("2099");
-  return da-db2;
+  const todayStr = localDateStr(new Date());
+
+  // Priority buckets: 0=today, 1=overdue, 2=future-dated, 3=future-flag
+  function bucket(t) {
+    if (t.isFuture) return 3;                          // Future flagged — bottom
+    if (!t.dueDate) return 2;                          // No date — with future-dated
+    if (t.dueDate === todayStr) return 0;              // Due today — top
+    if (t.dueDate < todayStr)  return 1;              // Overdue — second
+    return 2;                                           // Tomorrow or later — third
+  }
+
+  const ba = bucket(a), bb = bucket(b);
+  if (ba !== bb) return ba - bb;
+
+  // Within same bucket sort by date/time ascending
+  const da = a.dueDate ? new Date(a.dueDate+"T"+(a.dueTime||"23:59")) : new Date("2099");
+  const db2= b.dueDate ? new Date(b.dueDate+"T"+(b.dueTime||"23:59")) : new Date("2099");
+  return da - db2;
 }
 
 // My Pending's manual drag order: purely visual, never touches dueDate/dueTime.
@@ -3597,11 +3610,15 @@ function buildCard(t) {
     </button>
     <div class="task-body" onclick="window.showDetail('${t.id}')">
       <div class="task-title ${t.status==="completed"?"strike":""}">${esc(t.title)}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">
-        ${t.isFuture?'<span class="future-tag">🔄 Future</span>':""} ${t.isPrivate?'<span class="future-tag" style="background:#FDF2F8;color:#BE185D;border:1px solid #F9A8D4">🔒 Private</span>':""} ${t.recur?.type?'<span class="future-tag" style="background:#DCFCE7;color:#15803D;border:1px solid #86EFAC">🔁 '+recurLabel(t.recur)+'</span>':""}
-        ${t.snoozed&&t.status!=="completed"?`<span class="future-tag snooze-badge" onclick="event.stopPropagation();window.showSnoozeLog('${t.id}')">⏸ Snoozed${snoozeCnt>1?" "+snoozeCnt+"×":""}</span>`:""}
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+        <div class="assignees-row" style="margin-bottom:0;flex:1;min-width:0">${pills}</div>
+        <div style="display:flex;gap:4px;flex-shrink:0;align-items:center;flex-wrap:wrap">
+          ${t.snoozed&&t.status!=="completed"?`<span class="future-tag snooze-badge" onclick="event.stopPropagation();window.showSnoozeLog('${t.id}')">⏸ Snoozed${snoozeCnt>1?" "+snoozeCnt+"×":""}</span>`:""}
+          ${t.isFuture?'<span class="future-tag">🔄 Future</span>':""}
+          ${t.isPrivate?'<span class="future-tag" style="background:#FDF2F8;color:#BE185D;border:1px solid #F9A8D4">🔒 Private</span>':""}
+          ${t.recur?.type?'<span class="future-tag" style="background:#DCFCE7;color:#15803D;border:1px solid #86EFAC">🔁 '+recurLabel(t.recur)+'</span>':""}
+        </div>
       </div>
-      <div class="assignees-row">${pills}</div>
       ${buildSubtaskBlock(t)}
       <div class="task-meta">
         <span class="prio-dot" style="background:${pc}"></span>
