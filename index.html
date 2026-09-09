@@ -2076,6 +2076,8 @@ function celebrateTaskComplete(taskId) {
     card.classList.add("celebrate-glow");
     setTimeout(() => { card.classList.add("celebrate-collapse"); }, 520);
   }
+  // Suppress re-render for 680ms so Firestore listener doesn't wipe the animation
+  window._celebrateUntil = Date.now() + 680;
 
   // 2. Score pulse + +1 float
   // Find the score number element — it's in the stats strip
@@ -3207,6 +3209,11 @@ function buildMain() {
 
 // ── TASK RENDERING ────────────────────────────────────────────────
 function renderTaskArea() {
+  // Don't wipe task list during celebration animation
+  if (window._celebrateUntil && Date.now() < window._celebrateUntil) {
+    setTimeout(renderTaskArea, 100); // retry after animation completes
+    return;
+  }
   if (S.matrixMode) { renderMatrixView(); return; }
   if (S.weekMode) { renderWeekView(); return; }
   const el = document.getElementById("task-list"); if (!el) return;
@@ -3273,20 +3280,8 @@ function renderTaskArea() {
 }
 
 function dateSortCompare(a,b) {
-  const todayStr = localDateStr(new Date());
-
-  // Priority buckets: 0=today, 1=overdue, 2=future-dated, 3=future-flag
-  function bucket(t) {
-    if (t.isFuture) return 3;                          // Future flagged — bottom
-    if (!t.dueDate) return 2;                          // No date — with future-dated
-    if (t.dueDate === todayStr) return 0;              // Due today — top
-    if (t.dueDate < todayStr)  return 1;              // Overdue — second
-    return 2;                                           // Tomorrow or later — third
-  }
-
-  const ba = bucket(a), bb = bucket(b);
+  const ba = dateSortBucket(a), bb = dateSortBucket(b);
   if (ba !== bb) return ba - bb;
-
   // Within same bucket sort by date/time ascending
   const da = a.dueDate ? new Date(a.dueDate+"T"+(a.dueTime||"23:59")) : new Date("2099");
   const db2= b.dueDate ? new Date(b.dueDate+"T"+(b.dueTime||"23:59")) : new Date("2099");
@@ -3298,7 +3293,15 @@ function dateSortCompare(a,b) {
 // (e.g. newly created) falls to the end, sorted by date among themselves —
 // so a fresh task doesn't jump into the middle of an arrangement you made.
 function sortMyPending(tasks) {
+  // Priority buckets always respected first:
+  // 0=today, 1=overdue, 2=future-dated/undated, 3=future-flagged
+  // Within each bucket: manual sortOrder (drag) respected first,
+  // then dateSortCompare for tasks never manually dragged.
   return [...tasks].sort((a,b)=>{
+    const ba = dateSortBucket(a), bb = dateSortBucket(b);
+    if (ba !== bb) return ba - bb; // priority bucket first, always
+
+    // Same bucket — respect manual drag order
     const aHas = typeof a.sortOrder === "number";
     const bHas = typeof b.sortOrder === "number";
     if (aHas && bHas) return a.sortOrder - b.sortOrder;
@@ -3306,6 +3309,16 @@ function sortMyPending(tasks) {
     if (!aHas && bHas) return 1;
     return dateSortCompare(a,b);
   });
+}
+
+// Shared bucket calculator used by both sort functions
+function dateSortBucket(t) {
+  const todayStr = localDateStr(new Date());
+  if (t.isFuture) return 3;
+  if (!t.dueDate) return 2;
+  if (t.dueDate === todayStr) return 0;
+  if (t.dueDate < todayStr)  return 1;
+  return 2;
 }
 
 // ── EISENHOWER MATRIX ──────────────────────────────────────────────
@@ -4374,6 +4387,11 @@ window.toggleTask = async function(id) {
   const updatePayload = { status: ns };
   if (subtasksAfter) updatePayload.subtasks = subtasksAfter;
 
+  // Fire celebration BEFORE updateDoc — card must exist in DOM for animation
+  if (ns==="completed") {
+    celebrateTaskComplete(id); // Option 4: glow starts NOW while card still in DOM
+  }
+
   if (S.fbReady&&db) {
     await updateDoc(doc(db,"karya_tasks",id),updatePayload);
   } else {
@@ -4381,8 +4399,11 @@ window.toggleTask = async function(id) {
   }
   await addLog(ns==="completed"?"complete":"reopen",`"${t.title}"`);
   if (ns==="completed"){
-    closeModal(); showConfetti();
-    celebrateTaskComplete(id); // Option 4: card glow + score pulse
+    closeModal();
+    // Option 4 celebration (card glow + score pulse) already fired above
+    // before updateDoc. Confetti + trophy intentionally NOT shown for single
+    // task completion — reserved for Plan My Day completion only, so daily
+    // task ticking stays fast and uncluttered.
 
     // Auto-create next recurrence if task has a repeat config. We capture the
     // new doc's ID so that if the person hits Undo, we clean that up too —
