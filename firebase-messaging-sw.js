@@ -80,28 +80,44 @@ self.addEventListener("notificationclick", function(event) {
   // Body tap or explicit "open" action -> focus/open app, highlight the task.
   // Digest notifications carry no taskId; they open straight into Plan My Day.
   const url = event.notification.data?.url || self.registration.scope;
+
+  // IMPORTANT: run SEQUENTIALLY, not in parallel.
+  // Clearing the tray must fully complete BEFORE the app opens — otherwise
+  // Android kills the service worker as soon as the window launches and the
+  // remaining notifications are never closed.
   event.waitUntil(
-    Promise.all([
-      taskId ? postAction(taskId, "open", userName) : Promise.resolve(),
+    (async function() {
+      // 1. Clear every Karya notification from the tray FIRST and await it
+      try {
+        const notifications = await self.registration.getNotifications();
+        for (const n of notifications) { n.close(); }
+      } catch (e) { /* non-fatal */ }
 
-      // Clear ALL other Karya notifications from the tray when user taps Open.
-      // Snooze/Done actions are excluded (handled above) — only Open clears all.
-      self.registration.getNotifications().then(function(notifications) {
-        notifications.forEach(function(n) { n.close(); });
-      }),
+      // 2. Tell the server this task was opened (fire and forget is fine here)
+      const ackPromise = taskId
+        ? postAction(taskId, "open", userName)
+        : Promise.resolve();
 
-      clients.matchAll({ type: "window", includeUncontrolled: true }).then(function(clientList) {
+      // 3. Now focus or open the app
+      try {
+        const clientList = await clients.matchAll({ type: "window", includeUncontrolled: true });
         for (const client of clientList) {
           if (client.url.includes("parimalthaker.github.io/karya")) {
             client.postMessage(taskId
               ? { type: "SHOW_REMINDER", taskId: taskId }
               : { type: "SHOW_PLAN" });
-            return client.focus();
+            await client.focus();
+            await ackPromise;
+            return;
           }
         }
-        if (clients.openWindow) return clients.openWindow(url);
-      })
-    ])
+        if (clients.openWindow) {
+          await clients.openWindow(url);
+        }
+      } catch (e) { /* non-fatal */ }
+
+      await ackPromise;
+    })()
   );
 });
 
