@@ -1571,47 +1571,73 @@ html body.glass-theme .dfb-clear {
 /* ── TASK COMPLETION CELEBRATION (Option 4) ──────────────────────
    Card: green border flash then smooth collapse.
    Score: pulses green, scales up, +1 floats upward. */
-@keyframes taskGlowFlash {
-  0%   { border-color: rgba(34,197,94,0);   box-shadow: none; }
-  35%  { border-color: rgba(34,197,94,.90); box-shadow: 0 0 0 3px rgba(34,197,94,.25), inset 0 0 20px rgba(34,197,94,.10); }
-  100% { border-color: rgba(34,197,94,.45); box-shadow: 0 0 0 1px rgba(34,197,94,.12), inset 0 0 12px rgba(34,197,94,.06); }
-}
+
 @keyframes scoreNumPulse {
   0%   { transform:scale(1);    color: var(--acc); }
-  35%  { transform:scale(1.30); color: #22C55E; }
-  70%  { transform:scale(1.18); color: #22C55E; }
+  25%  { transform:scale(1.32); color: #22C55E; }
+  55%  { transform:scale(1.22); color: #22C55E; }
+  80%  { transform:scale(1.08); color: #22C55E; }
   100% { transform:scale(1);    color: var(--acc); }
 }
 @keyframes scorePlusFloat {
-  0%   { opacity:0; transform:translateY(3px); }
-  20%  { opacity:1; transform:translateY(-5px); }
-  65%  { opacity:1; transform:translateY(-12px); }
-  100% { opacity:0; transform:translateY(-20px); }
+  0%   { opacity:0; transform:translateY(4px)  scale(.85); }
+  18%  { opacity:1; transform:translateY(-4px) scale(1.1); }
+  40%  { opacity:1; transform:translateY(-9px) scale(1); }
+  75%  { opacity:.9; transform:translateY(-16px) scale(1); }
+  100% { opacity:0; transform:translateY(-26px) scale(.95); }
+}
+/* Option A: strike-through draws across title, card dims, then collapses */
+.task-card.celebrate-glow .task-title {
+  position: relative;
+  display: inline-block;
+}
+.task-card.celebrate-glow .task-title::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 52%;
+  height: 2.5px; width: 0;
+  background: var(--txt);
+  border-radius: 2px;
+  -webkit-animation: strikeDraw .45s cubic-bezier(.4,0,.2,1) forwards;
+  animation: strikeDraw .45s cubic-bezier(.4,0,.2,1) forwards;
 }
 .task-card.celebrate-glow {
-  -webkit-animation: taskGlowFlash .55s ease-out forwards;
-  animation: taskGlowFlash .55s ease-out forwards;
+  -webkit-animation: dimDown .5s ease .35s forwards;
+  animation: dimDown .5s ease .35s forwards;
 }
+@-webkit-keyframes strikeDraw { to { width: 100%; } }
+@keyframes strikeDraw { to { width: 100%; } }
+@-webkit-keyframes dimDown { to { opacity: .45; } }
+@keyframes dimDown { to { opacity: .45; } }
 .task-card.celebrate-collapse {
   opacity:0 !important;
   max-height:0 !important;
   padding-top:0 !important;
   padding-bottom:0 !important;
-  margin-bottom:0 !important;
+  margin-bottom:-8px !important;
   border-top-width:0 !important;
   border-bottom-width:0 !important;
-  -webkit-transform:scaleY(0.88);
-  transform:scaleY(0.88);
-  -webkit-transition:opacity .4s ease, max-height .4s ease, padding .4s ease, margin .4s ease, transform .3s ease, border-width .3s ease !important;
-  transition:opacity .4s ease, max-height .4s ease, padding .4s ease, margin .4s ease, transform .3s ease, border-width .3s ease !important;
+  -webkit-transition:
+    opacity .4s ease,
+    max-height .5s cubic-bezier(.4,0,.2,1),
+    padding .5s ease,
+    margin .5s ease,
+    border-width .4s ease !important;
+  transition:
+    opacity .4s ease,
+    max-height .5s cubic-bezier(.4,0,.2,1),
+    padding .5s ease,
+    margin .5s ease,
+    border-width .4s ease !important;
 }
 /* Score +1 float element */
 .score-plus-float {
   position:absolute; right:0; top:-6px;
-  font-size:12px; font-weight:800; color:#22C55E;
+  font-size:13px; font-weight:800; color:#22C55E;
   opacity:0; pointer-events:none;
-  -webkit-animation: scorePlusFloat 1s ease-out forwards;
-  animation: scorePlusFloat 1s ease-out forwards;
+  text-shadow:0 1px 4px rgba(34,197,94,.4);
+  -webkit-animation: scorePlusFloat 1.4s cubic-bezier(.4,0,.2,1) forwards;
+  animation: scorePlusFloat 1.4s cubic-bezier(.4,0,.2,1) forwards;
 }
 
 /* ── PLAN MY DAY — REDESIGNED BOTTOM SHEET ──────────────────────
@@ -2070,14 +2096,15 @@ function daysOverdueLabel(t) {
 // Card: green border flash → smooth collapse
 // Score: green pulse + +1 float upward
 function celebrateTaskComplete(taskId) {
-  // 1. Card glow + collapse
+  // Option A: strikethrough draws (0.45s) → card dims (0.5s) → collapse (0.5s)
   const card = document.querySelector("[data-task-id='" + taskId + "']");
   if (card) {
-    card.classList.add("celebrate-glow");
-    setTimeout(() => { card.classList.add("celebrate-collapse"); }, 520);
+    card.classList.add("celebrate-glow"); // triggers strikethrough + dim
+    // Let strike + dim complete before collapsing the card away
+    setTimeout(() => { card.classList.add("celebrate-collapse"); }, 900);
   }
-  // Suppress re-render for 680ms so Firestore listener doesn't wipe the animation
-  window._celebrateUntil = Date.now() + 680;
+  // Suppress re-render until whole sequence finishes
+  window._celebrateUntil = Date.now() + 1450;
 
   // 2. Score pulse + +1 float
   // Find the score number element — it's in the stats strip
@@ -2085,8 +2112,8 @@ function celebrateTaskComplete(taskId) {
   if (scoreEl) {
     scoreEl.style.animation = "none";
     scoreEl.offsetHeight; // reflow
-    scoreEl.style.animation = "scoreNumPulse .7s ease-out forwards";
-    setTimeout(() => { scoreEl.style.animation = ""; }, 750);
+    scoreEl.style.animation = "scoreNumPulse 1.1s cubic-bezier(.4,0,.2,1) forwards";
+    setTimeout(() => { scoreEl.style.animation = ""; }, 1150);
 
     // +1 float
     const wrap = scoreEl.parentElement;
@@ -2096,7 +2123,7 @@ function celebrateTaskComplete(taskId) {
       plus.className = "score-plus-float";
       plus.textContent = "+1";
       wrap.appendChild(plus);
-      setTimeout(() => plus.remove(), 1050);
+      setTimeout(() => plus.remove(), 1500);
     }
   }
 }
