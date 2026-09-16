@@ -2792,6 +2792,11 @@ function loadLocal() {
   checkUrlReminder();
   setTimeout(checkDismissedReminders, 1200);
   setTimeout(cleanupOldNotifAcks, 6000); // clean up old per-user ack entries (7-day TTL)
+  // Clear this device's notification tray on app open, and start the
+  // per-user cross-device ack watcher so dismissing on one device clears
+  // the same task's notification on this user's other devices.
+  setTimeout(clearAllKaryaNotifications, 500);
+  setTimeout(startAckTrayWatcher, 1500);
   if (!_planBootDone) { _planBootDone = true; setTimeout(checkPlanTriggers, 900); }
 }
 function saveLocal() {
@@ -4414,6 +4419,12 @@ window.toggleTask = async function(id) {
   const updatePayload = { status: ns };
   if (subtasksAfter) updatePayload.subtasks = subtasksAfter;
 
+  // Cancel any pending reminder timer for this task
+  if (ns==="completed" && _reminderTimers.has(id)) {
+    clearTimeout(_reminderTimers.get(id));
+    _reminderTimers.delete(id);
+  }
+
   // Fire celebration BEFORE updateDoc — card must exist in DOM for animation
   if (ns==="completed") {
     celebrateTaskComplete(id); // Option 4: glow starts NOW while card still in DOM
@@ -4915,6 +4926,80 @@ function rescheduleAllReminders() {
   });
 }
 
+
+// ── OS NOTIFICATION TRAY CLEARING ────────────────────────────────
+// Runs from the PAGE (not the service worker) because Android kills the
+// service worker the moment the app launches, before async work finishes.
+// The page is a stable context so this completes reliably.
+
+// Close every Karya notification currently in this device's tray.
+async function clearAllKaryaNotifications() {
+  try {
+    if (!_swReg || !("Notification" in window)) return;
+    const notifs = await _swReg.getNotifications();
+    for (const n of notifs) { n.close(); }
+    if (notifs.length) console.log("[Karya] Cleared", notifs.length, "tray notification(s)");
+  } catch(e) { console.warn("[Karya] clearAllKaryaNotifications failed:", e); }
+}
+
+// Close the tray notification for ONE specific task on this device.
+async function clearNotificationForTask(taskId) {
+  if (!taskId) return;
+  try {
+    if (!_swReg) return;
+    const tag = "karya-" + taskId;
+    const notifs = await _swReg.getNotifications({ tag: tag });
+    for (const n of notifs) { n.close(); }
+    // Fallback: some browsers ignore the tag filter — match on data instead
+    if (!notifs.length) {
+      const all = await _swReg.getNotifications();
+      for (const n of all) {
+        if ((n.data && n.data.taskId === taskId) || n.tag === tag) n.close();
+      }
+    }
+  } catch(e) { console.warn("[Karya] clearNotificationForTask failed:", e); }
+}
+
+// Watch THIS user's ack entries in Firestore. When any entry appears —
+// meaning this user acknowledged a reminder on ANY of their devices —
+// clear that task's notification from this device's tray too.
+// Scoped to S.user.id so other users are completely unaffected.
+let _ackTrayUnsub = null;
+function startAckTrayWatcher() {
+  if (!S.fbReady || !db || !S.user?.id) return;
+  if (_ackTrayUnsub) { try { _ackTrayUnsub(); } catch(e) {} _ackTrayUnsub = null; }
+  try {
+    const qy = query(
+      collection(db, "karya_notif_ack"),
+      where("userId", "==", S.user.id)
+    );
+    _ackTrayUnsub = onSnapshot(qy, (snap) => {
+      snap.docChanges().forEach((chg) => {
+        if (chg.type === "added" || chg.type === "modified") {
+          const d = chg.doc.data();
+          if (d && d.taskId) {
+            clearNotificationForTask(d.taskId);
+            // Also cancel any pending local timer for that task
+            if (_reminderTimers.has(d.taskId)) {
+              clearTimeout(_reminderTimers.get(d.taskId));
+              _reminderTimers.delete(d.taskId);
+            }
+          }
+        }
+      });
+    });
+    console.log("[Karya] Ack tray watcher started for", S.user.name);
+  } catch(e) { console.warn("[Karya] startAckTrayWatcher failed:", e); }
+}
+
+// Clear this device's tray whenever the app becomes visible
+document.addEventListener("visibilitychange", function() {
+  if (document.visibilityState === "visible") {
+    clearAllKaryaNotifications();
+  }
+});
+window.addEventListener("focus", function() { clearAllKaryaNotifications(); });
+
 function scheduleReminder(task) {
   if (!task.dueDate || task.status==="completed") return;
   if (task.isFuture) return;  // no firm date yet — nothing to remind about
@@ -4932,11 +5017,24 @@ function scheduleReminder(task) {
   if ("Notification" in window && Notification.permission==="default") Notification.requestPermission().catch(()=>{});
 }
 
+// Holds live setTimeout IDs per task so an old timer can be cancelled
+// before a new one is armed. Without this, editing/snoozing a task left the
+// previous timer running and BOTH fired — the double-notification bug.
+const _reminderTimers = new Map();
+
 function _doSchedule(task, remindAt) {
   const delay = remindAt - new Date();
   if (delay <= 0) return;
   const MAX = 2000000000;
-  setTimeout(async () => {
+
+  // Cancel any previously armed timer for this task
+  if (_reminderTimers.has(task.id)) {
+    clearTimeout(_reminderTimers.get(task.id));
+    _reminderTimers.delete(task.id);
+  }
+
+  const timerId = setTimeout(async () => {
+    _reminderTimers.delete(task.id); // timer has fired, clear the record
     // CRITICAL FIX: Only show reminder to users assigned to this task
     if (S.user) {
       const assignees = Array.isArray(task.assignedTo)
@@ -5015,6 +5113,8 @@ function _doSchedule(task, remindAt) {
     markReminderSeen(task.id);
 
   }, Math.min(delay, MAX));
+
+  _reminderTimers.set(task.id, timerId);
 }
 
 // Track which reminders have already shown their popup this session (avoids double-popup)
@@ -5055,7 +5155,10 @@ function notifAckId(userId, taskId) {
 }
 
 async function writeNotifAck(taskId) {
-  if (!S.user?.id || !taskId || !S.fbReady || !db) return;
+  if (!taskId) return;
+  // Clear this device's tray notification for the task immediately
+  clearNotificationForTask(taskId);
+  if (!S.user?.id || !S.fbReady || !db) return;
   try {
     const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     await setDoc(
