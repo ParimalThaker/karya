@@ -5069,45 +5069,20 @@ function _doSchedule(task, remindAt) {
       } catch(e) { /* non-fatal — show reminder if read fails */ }
     }
 
-    const notifTitle = "Karya — Do Now";
     const notifBody  = task.title;
-    const notifTag   = "karya-" + (task.id || "task");
-    let shown = false;
 
-    // Method 1: Service Worker (works when minimized)
-    try {
-      if (_swReg && "Notification" in window && Notification.permission === "granted") {
-        await _swReg.showNotification(notifTitle, {
-          body:               notifBody,
-          tag:                notifTag,
-          icon:               KARYA_ICON,
-          badge:              "./karya-badge-96.png",
-          requireInteraction: true,
-          renotify:           true,
-          vibrate:            [300,100,300,100,300],
-          data:               { taskId: task.id||"", url: location.href }
-        });
-        shown = true;
-        console.log("[Karya] SW notification sent for:", notifBody);
-      }
-    } catch(e) { console.warn("[Karya] SW notif failed:", e.message); }
-
-    // Method 2: Window Notification fallback
-    if (!shown && "Notification" in window && Notification.permission === "granted") {
-      try {
-        new Notification(notifTitle, {
-          body: notifBody, tag: notifTag, requireInteraction: true
-        });
-        shown = true;
-      } catch(e) {}
-    }
-
-    // Method 3: In-app popup — only when app is in foreground AND
-    // no OS notification was shown (mobile) OR OS notification failed.
-    // On Windows/desktop the OS notification (Method 1) is sufficient —
-    // showing the in-app popup too causes the double-notification the user sees.
-    const isDesktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    if (!shown || !isDesktop) {
+    // OS NOTIFICATIONS ARE SENT BY THE SERVER ONLY (Cloud Functions -> FCM ->
+    // service worker). The page deliberately does NOT show its own OS
+    // notification: it has no way to know the server already sent one, so
+    // both fired and the user saw the same reminder twice (one with the app
+    // icon from the service worker, one without from the page). The server
+    // path is the reliable one — it works whether the app is open, minimised
+    // or fully closed — so it is the single source of OS notifications.
+    //
+    // The page's only job here is the in-app popup, shown when Karya is
+    // actually open on screen. If the tab is hidden the server notification
+    // has already covered it, so nothing is shown.
+    if (document.visibilityState === "visible") {
       showBigNotif(notifBody, task.id || "");
     }
     markReminderSeen(task.id);
