@@ -735,8 +735,9 @@ body.ios-theme::before {
     var(--ios-bg-override,
       radial-gradient(ellipse 75% 50% at 8%  8%,  rgba(255,107,53,.82) 0%, transparent 55%)
     );
-  -webkit-animation: iosMeshMove 24s ease-in-out infinite alternate;
-  animation: iosMeshMove 24s ease-in-out infinite alternate;
+  /* Static. The mesh used to drift on a 24s loop; a full-viewport moving
+     background is exactly what reduced-motion guidance warns against, and it
+     was tiring to look at all day. The colour depth is kept, the motion is not. */
 }
 /* Second mesh layer (split for wallpaper override compatibility) */
 body.ios-theme:not([data-wallpaper])::before {
@@ -796,7 +797,7 @@ body.ios-theme .filter-bar {
   background: rgba(0,0,0,0.20) !important;
   border-bottom: 1px solid rgba(255,255,255,0.08) !important;
 }
-body.ios-theme .prio-sel { background: rgba(255,255,255,0.10) !important; border-color: rgba(255,255,255,0.16) !important; color: #fff !important; }
+body.ios-theme .prio-sel { background: rgba(28,8,64,0.92) !important; border-color: rgba(255,255,255,0.22) !important; color: #fff !important; }
 /* Task cards — directional glass physics, per-card diagonal light */
 body.ios-theme .task-card {
   background: linear-gradient(155deg,
@@ -822,25 +823,21 @@ body.ios-theme .task-card::before {
   background: linear-gradient(90deg, rgba(255,255,255,0.70), rgba(255,255,255,0.08) 80%, transparent);
   pointer-events: none;
 }
-/* Diagonal ambient shimmer — VERY slow (12s), alternating direction per card,
-   low opacity so it reads as light physics not animation */
+/* Light sweep across the glass — fires ONLY on press, never on an idle loop.
+   Apple treats motion as a response to the user, not decoration that runs on
+   its own; perpetual loops also fall foul of reduced-motion guidance. The
+   sweep sits idle off-screen and is animated by the :active rule below. */
 body.ios-theme .task-card::after {
   content: ""; position: absolute; inset: -60%;
-  background: linear-gradient(118deg, transparent 38%, rgba(255,255,255,0.06) 48%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.06) 52%, transparent 62%);
-  -webkit-animation: iosDiagA 12s ease-in-out infinite;
-  animation: iosDiagA 12s ease-in-out infinite;
+  background: linear-gradient(118deg, transparent 38%, rgba(255,255,255,0.08) 48%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.08) 52%, transparent 62%);
+  -webkit-transform: translate(-70%,-70%);
+  transform: translate(-70%,-70%);
+  opacity: 0;
   pointer-events: none;
 }
-body.ios-theme .task-card:nth-child(even)::after {
-  background: linear-gradient(148deg, transparent 38%, rgba(255,255,255,0.05) 48%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.05) 52%, transparent 62%);
-  -webkit-animation: iosDiagB 15s ease-in-out infinite 2s;
-  animation: iosDiagB 15s ease-in-out infinite 2s;
-}
-body.ios-theme .task-card:nth-child(3n)::after {
-  -webkit-animation-duration: 18s;
-  animation-duration: 18s;
-  -webkit-animation-delay: 4s;
-  animation-delay: 4s;
+body.ios-theme .task-card:active::after {
+  -webkit-animation: iosSweepPress .55s cubic-bezier(0.25,1,0.5,1);
+  animation: iosSweepPress .55s cubic-bezier(0.25,1,0.5,1);
 }
 /* Touch interaction: card brightens on tap */
 body.ios-theme .task-card:active {
@@ -881,14 +878,14 @@ body.ios-theme .modal-hdr { background: transparent !important; border-bottom: 1
 body.ios-theme .modal-hdr h2 { color: #fff !important; }
 body.ios-theme .modal-x { background: rgba(255,255,255,0.09) !important; color: rgba(255,255,255,0.68) !important; border: 1px solid rgba(255,255,255,0.13) !important; }
 body.ios-theme .flbl { color: rgba(255,255,255,0.54) !important; }
-body.ios-theme .field-input { background: rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.15) !important; color: #fff !important; }
+body.ios-theme .field-input { background: rgba(28,8,64,0.92) !important; border-color: rgba(255,255,255,0.22) !important; color: #fff !important; }
 body.ios-theme .field-input:focus { border-color: rgba(255,255,255,0.54) !important; }
 body.ios-theme .field-input::placeholder { color: rgba(255,255,255,0.34) !important; }
 body.ios-theme .field-input option { background: #0D0030; color: #fff; }
 body.ios-theme .btn-primary { background: linear-gradient(135deg, rgba(255,255,255,0.26), rgba(255,255,255,0.16)) !important; border: 1px solid rgba(255,255,255,0.34) !important; color: #fff !important; }
 body.ios-theme .btn-secondary { background: rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.15) !important; color: rgba(255,255,255,0.78) !important; }
 body.ios-theme .btn-danger { background: rgba(255,80,80,0.11) !important; border-color: rgba(255,100,100,0.26) !important; color: #FF8A8A !important; }
-body.ios-theme .action-item { background: rgba(255,255,255,0.06) !important; border-color: rgba(255,255,255,0.11) !important; color: #fff !important; }
+body.ios-theme .action-item { background: rgba(28,8,64,0.92) !important; border-color: rgba(255,255,255,0.18) !important; color: #fff !important; }
 body.ios-theme .action-item.danger { background: rgba(255,80,80,0.09) !important; border-color: rgba(255,100,100,0.20) !important; color: #FF8A8A !important; }
 body.ios-theme .select-screen, body.ios-theme .login-screen { background: transparent !important; }
 body.ios-theme .select-card, body.ios-theme .login-card { background: rgba(255,255,255,0.09) !important; -webkit-backdrop-filter: blur(32px); backdrop-filter: blur(32px); border: 1px solid rgba(255,255,255,0.17) !important; }
@@ -905,7 +902,7 @@ body.ios-theme .empty-state { color: rgba(255,255,255,0.38) !important; }
 body.ios-theme .bni-task { color: #fff !important; }
 body.ios-theme .bni-donow { color: rgba(255,255,255,0.72) !important; }
 body.ios-theme .bni-snooze-lbl { color: rgba(255,255,255,0.62) !important; }
-body.ios-theme .snooze-btn { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.13) !important; color: rgba(255,255,255,0.82) !important; }
+body.ios-theme .snooze-btn { background: rgba(28,8,64,0.92) !important; border-color: rgba(255,255,255,0.20) !important; color: rgba(255,255,255,0.92) !important; }
 body.ios-theme .log-item { border-color: rgba(255,255,255,0.07) !important; }
 body.ios-theme .log-user { color: rgba(255,255,255,0.68) !important; }
 body.ios-theme .theme-row { color: rgba(255,255,255,0.34) !important; }
@@ -913,7 +910,7 @@ body.ios-theme .theme-row a { color: rgba(255,255,255,0.58) !important; }
 body.ios-theme .icon-btn { background: rgba(255,255,255,0.10) !important; border: 1px solid rgba(255,255,255,0.15) !important; }
 body.ios-theme .user-chip { background: rgba(255,255,255,0.10) !important; border-color: rgba(255,255,255,0.18) !important; color: #fff !important; }
 body.ios-theme .toast { background: rgba(8,0,26,0.88) !important; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.14) !important; }
-body.ios-theme .assign-chip { background: rgba(255,255,255,0.08) !important; color: rgba(255,255,255,0.84) !important; border-color: rgba(255,255,255,0.14) !important; }
+body.ios-theme .assign-chip { background: rgba(28,8,64,0.92) !important; color: rgba(255,255,255,0.92) !important; border-color: rgba(255,255,255,0.20) !important; }
 body.ios-theme .tp-sel { background: rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.15) !important; color: #fff !important; }
 body.ios-theme .tp-col { color: #fff !important; }
 body.ios-theme .pw-wrap input { background: rgba(255,255,255,0.09) !important; border-color: rgba(255,255,255,0.17) !important; color: #fff !important; }
@@ -932,14 +929,10 @@ body.ios-theme .ios-wallpaper-row { display: flex; align-items: center; gap: 10p
 .ios-wallpaper-btn:active { background: rgba(255,255,255,0.18); }
 .ios-wallpaper-clear { background: rgba(255,80,80,0.10); border: 1px solid rgba(255,100,100,0.22); border-radius: 8px; color: #FF8A8A; font-size: 12px; padding: 8px 10px; cursor: pointer; white-space: nowrap; }
 /* iOS ambient animations */
-@-webkit-keyframes iosMeshMove { 0%{opacity:1;-webkit-transform:scale(1) rotate(0deg);transform:scale(1) rotate(0deg)} 33%{opacity:.92;-webkit-transform:scale(1.04) rotate(.8deg);transform:scale(1.04) rotate(.8deg)} 66%{opacity:.96;-webkit-transform:scale(.98) rotate(-.5deg);transform:scale(.98) rotate(-.5deg)} 100%{opacity:1;-webkit-transform:scale(1.02) rotate(.3deg);transform:scale(1.02) rotate(.3deg)} }
-@keyframes iosMeshMove { 0%{opacity:1;transform:scale(1) rotate(0deg)} 33%{opacity:.92;transform:scale(1.04) rotate(.8deg)} 66%{opacity:.96;transform:scale(.98) rotate(-.5deg)} 100%{opacity:1;transform:scale(1.02) rotate(.3deg)} }
+@-webkit-keyframes iosSweepPress { 0%{opacity:0;-webkit-transform:translate(-70%,-70%);transform:translate(-70%,-70%)} 25%{opacity:1} 100%{opacity:0;-webkit-transform:translate(70%,70%);transform:translate(70%,70%)} }
+@keyframes iosSweepPress { 0%{opacity:0;transform:translate(-70%,-70%)} 25%{opacity:1} 100%{opacity:0;transform:translate(70%,70%)} }
 @-webkit-keyframes iosSheen { 0%{opacity:0;-webkit-transform:translateX(-100%);transform:translateX(-100%)} 30%{opacity:1} 70%{opacity:1} 100%{opacity:0;-webkit-transform:translateX(100%);transform:translateX(100%)} }
 @keyframes iosSheen { 0%{opacity:0;transform:translateX(-100%)} 30%{opacity:1} 70%{opacity:1} 100%{opacity:0;transform:translateX(100%)} }
-@-webkit-keyframes iosDiagA { 0%,100%{-webkit-transform:translate(-70%,-70%);transform:translate(-70%,-70%)} 50%{-webkit-transform:translate(70%,70%);transform:translate(70%,70%)} }
-@keyframes iosDiagA { 0%,100%{transform:translate(-70%,-70%)} 50%{transform:translate(70%,70%)} }
-@-webkit-keyframes iosDiagB { 0%,100%{-webkit-transform:translate(-80%,-60%);transform:translate(-80%,-60%)} 50%{-webkit-transform:translate(80%,60%);transform:translate(80%,60%)} }
-@keyframes iosDiagB { 0%,100%{transform:translate(-80%,-60%)} 50%{transform:translate(80%,60%)} }
 
 /* ═══════════════════════════════════════════════════════════════════
    CARBON BLACK THEME — IBM Carbon Design System v11
@@ -1259,6 +1252,194 @@ html body.glassdark-theme ::-webkit-scrollbar { width: 4px; height: 4px; }
 html body.glassdark-theme ::-webkit-scrollbar-track { background: transparent; }
 html body.glassdark-theme ::-webkit-scrollbar-thumb { background: rgba(129,140,248,0.30); border-radius: 99px; }
 
+
+/* ═══════════════════════════════════════════════════════════════════
+   iOS LIQUID GLASS — CRAFT PASS
+   Three refinements from Apple's material and typography guidance.
+═══════════════════════════════════════════════════════════════════ */
+
+/* (a) VIBRANCY — text over translucent, shifting backgrounds needs more
+   contrast and a touch more weight than text on a solid panel. Flat low-alpha
+   grey is the classic mistake. Muted text lifted, tracking nudged up slightly
+   at small sizes where legibility is thinnest. */
+html body.ios-theme .due-lbl,
+html body.ios-theme .s-lbl,
+html body.ios-theme .m-role,
+html body.ios-theme .plan-action-hint,
+html body.ios-theme .plan-sub-info,
+html body.ios-theme .dkey,
+html body.ios-theme .tav-nm,
+html body.ios-theme .ach-cnt {
+  color: rgba(255,255,255,.78) !important;
+  letter-spacing: .012em;
+  font-weight: 500;
+}
+html body.ios-theme .task-meta,
+html body.ios-theme .empty-state,
+html body.ios-theme .bni-snooze-lbl { color: rgba(255,255,255,.75) !important; letter-spacing: .012em; }
+html body.ios-theme .menu-btn { color: rgba(255,255,255,.66) !important; }
+
+/* Tracking is size-specific: large text reads too loose as it grows, so it
+   tightens; small text stays near zero or slightly positive. */
+html body.ios-theme .task-title { letter-spacing: -.011em; }
+html body.ios-theme .s-num      { letter-spacing: -.015em; }
+html body.ios-theme .plan-title { letter-spacing: -.018em; }
+html body.ios-theme .app-title,
+html body.ios-theme .login-appname { letter-spacing: -.02em; }
+
+/* (b) SCROLL EDGE — a soft fade where content passes under the floating
+   chrome, instead of a hard 1px rule. The divider only earns its place where
+   floating UI actually overlaps content. */
+html body.ios-theme .action-row-wrap {
+  border-bottom: none !important;
+  position: relative;
+}
+html body.ios-theme .action-row-wrap::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: -14px; height: 14px;
+  background: linear-gradient(rgba(8,0,26,.30), rgba(8,0,26,0));
+  pointer-events: none; z-index: 3;
+}
+html body.ios-theme .filter-bar { border-bottom-color: rgba(255,255,255,.05) !important; }
+html body.ios-theme .stats-strip { border-bottom-color: rgba(255,255,255,.05) !important; }
+
+/* (c) MATERIALIZE — glass surfaces arrive as material forming, blur and scale
+   moving together, rather than a flat opacity fade. */
+@-webkit-keyframes iosMaterialize {
+  0%   { opacity: 0; -webkit-transform: translateY(14px) scale(.965); -webkit-backdrop-filter: blur(0px) saturate(100%); }
+  100% { opacity: 1; -webkit-transform: translateY(0) scale(1);       -webkit-backdrop-filter: blur(40px) saturate(200%); }
+}
+@keyframes iosMaterialize {
+  0%   { opacity: 0; transform: translateY(14px) scale(.965); backdrop-filter: blur(0px) saturate(100%); }
+  100% { opacity: 1; transform: translateY(0) scale(1);       backdrop-filter: blur(40px) saturate(200%); }
+}
+html body.ios-theme .modal {
+  -webkit-animation: iosMaterialize .34s cubic-bezier(0.25,1,0.5,1);
+  animation: iosMaterialize .34s cubic-bezier(0.25,1,0.5,1);
+}
+@-webkit-keyframes iosSheetMaterialize {
+  0%   { -webkit-transform: translateY(100%) scale(.98); -webkit-backdrop-filter: blur(0px) saturate(100%); }
+  100% { -webkit-transform: translateY(0) scale(1);      -webkit-backdrop-filter: blur(40px) saturate(200%); }
+}
+@keyframes iosSheetMaterialize {
+  0%   { transform: translateY(100%) scale(.98); backdrop-filter: blur(0px) saturate(100%); }
+  100% { transform: translateY(0) scale(1);      backdrop-filter: blur(40px) saturate(200%); }
+}
+html body.ios-theme .plan-sheet-modal .modal {
+  -webkit-animation: iosSheetMaterialize .38s cubic-bezier(0.25,1,0.5,1) !important;
+  animation: iosSheetMaterialize .38s cubic-bezier(0.25,1,0.5,1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   iOS LIQUID GLASS — SYSTEM ACCESSIBILITY SETTINGS
+   Honours the three settings Apple's guidance calls for. Each works
+   independently, and a user may have more than one switched on.
+═══════════════════════════════════════════════════════════════════ */
+
+/* Reduce Motion — no sweeps, no slides, no scaling. Opacity changes stay,
+   because they aid comprehension without causing vestibular discomfort. */
+@media (prefers-reduced-motion: reduce) {
+  html body.ios-theme *,
+  html body.ios-theme *::before,
+  html body.ios-theme *::after {
+    -webkit-animation-duration: .001ms !important;
+    animation-duration: .001ms !important;
+    -webkit-animation-iteration-count: 1 !important;
+    animation-iteration-count: 1 !important;
+    -webkit-transition-duration: .001ms !important;
+    transition-duration: .001ms !important;
+  }
+  html body.ios-theme .task-card:active { -webkit-transform: none !important; transform: none !important; }
+  html body.ios-theme .task-card::after  { display: none !important; }
+  html body.ios-theme .topbar::after     { display: none !important; }
+  html body.ios-theme .date-scrubber-pill {
+    -webkit-transition: opacity .12s linear !important;
+    transition: opacity .12s linear !important;
+  }
+  html body.ios-theme .plan-sheet-modal .modal,
+  html body.ios-theme .modal {
+    -webkit-animation: none !important; animation: none !important;
+    -webkit-transform: none !important; transform: none !important;
+    -webkit-transition: opacity .18s linear !important;
+    transition: opacity .18s linear !important;
+  }
+  html body.ios-theme .action-row-wrap::after { display: none !important; }
+}
+
+/* Reduce Transparency — frost the glass into near-solid panels. Blur is
+   dropped entirely, backgrounds become opaque, borders do the separating. */
+@media (prefers-reduced-transparency: reduce) {
+  html body.ios-theme::before { display: none !important; }
+  html body.ios-theme { background: #12002B !important; }
+  html body.ios-theme .topbar,
+  html body.ios-theme .stats-strip,
+  html body.ios-theme .filter-bar,
+  html body.ios-theme .action-row-wrap {
+    background: #1B0840 !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  html body.ios-theme .task-card {
+    background: #1E0A46 !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  html body.ios-theme .task-card::after { display: none !important; }
+  html body.ios-theme .modal,
+  html body.ios-theme .plan-sheet-modal .modal,
+  html body.ios-theme .select-card,
+  html body.ios-theme .login-card,
+  html body.ios-theme .toast,
+  html body.ios-theme .big-notif-box {
+    background: #1B0840 !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  html body.ios-theme .date-scrubber-pill {
+    background: rgba(255,255,255,.22) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  html body.ios-theme .view-icon-btn {
+    background: #24104F !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+}
+
+/* Increase Contrast — solid surfaces, defined borders, full-strength text. */
+@media (prefers-contrast: more) {
+  html body.ios-theme::before { display: none !important; }
+  html body.ios-theme { background: #0B0018 !important; }
+  html body.ios-theme .topbar,
+  html body.ios-theme .stats-strip,
+  html body.ios-theme .filter-bar,
+  html body.ios-theme .action-row-wrap,
+  html body.ios-theme .modal,
+  html body.ios-theme .plan-sheet-modal .modal {
+    background: #14002E !important;
+    border-color: rgba(255,255,255,.55) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  html body.ios-theme .task-card {
+    background: #17033A !important;
+    border: 1px solid rgba(255,255,255,.45) !important;
+    border-left: 3px solid rgba(255,255,255,.75) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  html body.ios-theme .task-card.overdue { border-left-color: #FF6B6B !important; }
+  html body.ios-theme .task-title,
+  html body.ios-theme .s-num,
+  html body.ios-theme .dval        { color: #fff !important; text-shadow: none !important; }
+  html body.ios-theme .due-lbl,
+  html body.ios-theme .s-lbl,
+  html body.ios-theme .m-role,
+  html body.ios-theme .plan-action-hint { color: rgba(255,255,255,.92) !important; }
+  html body.ios-theme .field-input,
+  html body.ios-theme .prio-sel,
+  html body.ios-theme .f-search-wrap {
+    background: #0B0018 !important;
+    border: 1px solid rgba(255,255,255,.65) !important;
+  }
+}
+
+
+
 /* NOTIFICATION PERMISSION BANNER */
 .notif-permission-banner{position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,#1B2B4B,#2A4080);color:#fff;padding:16px 18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 24px rgba(0,0,0,.4);-webkit-animation:slideDown .35s ease;animation:slideDown .35s ease}
 .notif-banner-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
@@ -1454,7 +1635,11 @@ html body.glass-theme .filter-bar {
   background:rgba(0,0,0,.22) !important;
   border-bottom:1px solid rgba(255,255,255,.07) !important;
 }
-html body.ios-theme .f-search-wrap,
+html body.ios-theme .f-search-wrap {
+  background:rgba(28,8,64,0.92) !important;
+  border:1px solid rgba(255,255,255,.22) !important;
+  box-shadow:none !important;
+}
 html body.glass-theme .f-search-wrap {
   background:rgba(255,255,255,.09) !important;
   border:1px solid rgba(255,255,255,.16) !important;
@@ -1741,14 +1926,17 @@ html body.ios-theme .plan-dot.pd-active { background: rgba(255,255,255,.9) !impo
 html body.ios-theme .plan-title { color: #fff !important; text-shadow: 0 1px 6px rgba(0,0,0,.4); }
 html body.ios-theme .plan-sub-info { color: rgba(255,255,255,.5) !important; }
 html body.ios-theme .plan-question { color: rgba(255,255,255,.6) !important; border-color: rgba(255,255,255,.12) !important; }
+/* Rows sit ON the glass sheet, so they are solid — stacking translucent on
+   translucent collapses legibility. Colour tints are layered over the solid
+   base so the green/blue/amber read true instead of washing out. */
 html body.ios-theme .plan-action-row {
-  background: rgba(255,255,255,.07) !important;
-  border: 1px solid rgba(255,255,255,.13) !important;
-  backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
+  background: rgba(28,8,64,0.92) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
 }
-html body.ios-theme .par-done  { background: rgba(34,197,94,.14) !important; border-color: rgba(34,197,94,.28) !important; }
-html body.ios-theme .par-today { background: rgba(79,126,255,.14) !important; border-color: rgba(79,126,255,.28) !important; }
-html body.ios-theme .par-tom   { background: rgba(251,191,36,.12) !important; border-color: rgba(251,191,36,.25) !important; }
+html body.ios-theme .par-done  { background: linear-gradient(rgba(34,197,94,.20),rgba(34,197,94,.20)), rgba(28,8,64,0.92) !important; border-color: rgba(34,197,94,.40) !important; }
+html body.ios-theme .par-today { background: linear-gradient(rgba(79,126,255,.20),rgba(79,126,255,.20)), rgba(28,8,64,0.92) !important; border-color: rgba(79,126,255,.40) !important; }
+html body.ios-theme .par-tom   { background: linear-gradient(rgba(251,191,36,.18),rgba(251,191,36,.18)), rgba(28,8,64,0.92) !important; border-color: rgba(251,191,36,.36) !important; }
 html body.ios-theme .par-done  .plan-action-main { color: #6EE7B7 !important; }
 html body.ios-theme .par-today .plan-action-main { color: #93C5FD !important; }
 html body.ios-theme .par-tom   .plan-action-main { color: #FCD34D !important; }
